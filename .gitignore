@@ -1,0 +1,69 @@
+# Ignore build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider IDE files
+.idea/
+.idea_modules/
+*.iml
+*.iws
+
+# Rider workspace
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries
+.idea/vcs.xml
+.idea/jsLibraryMappings.xml
+.idea/modules.xml
+
+# Temporary files
+*.tmp
+*.temp
+*.tmp.*
+*.swp
+*~
+*.bak
+*.old
+*.orig
+
+# Logs and databases
+*.log
+*.sqlite
+*.sql
+*.db
+
+# File storage for Rider run/debug configurations
+.idea/runConfigurations/
+
+# Environment-specific files
+*.env
+.env.*
+
+# Dependency directories
+node_modules/
+packages/
+
+# OS generated files/macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows OS files
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux OS files
+*~
+.trash/
+
+.vscode
+.vs
