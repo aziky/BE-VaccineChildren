@@ -548,9 +548,6 @@ public partial class VaccineSystemDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("created_by");
             entity.Property(e => e.Dob).HasColumnName("dob");
-            entity.Property(e => e.FullName)
-                .HasMaxLength(100)
-                .HasColumnName("full_name");
             entity.Property(e => e.Gender)
                 .HasMaxLength(50)
                 .HasColumnName("gender");
@@ -560,6 +557,9 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.Status).HasColumnName("status");
         });
 
         modelBuilder.Entity<Template>(entity =>
