@@ -11,5 +11,6 @@ public static class DependencyInjection
     {
         services.AddAutoMapper(typeof(MappingProfile));
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IDashboardService, DashboardService>();
     }
 }

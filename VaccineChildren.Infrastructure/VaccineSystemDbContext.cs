@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using VaccineChildren.Domain.Entities;
 
 namespace VaccineChildren.Infrastructure;
@@ -56,7 +54,7 @@ public partial class VaccineSystemDbContext : DbContext
     {
         modelBuilder.Entity<Batch>(entity =>
         {
-            entity.HasKey(e => e.BatchId).HasName("batchnumber_pkey");
+            entity.HasKey(e => e.BatchId).HasName("batch_pkey");
 
             entity.ToTable("batch");
 
@@ -76,7 +74,7 @@ public partial class VaccineSystemDbContext : DbContext
             entity.HasOne(d => d.Vaccine).WithMany(p => p.Batches)
                 .HasPrincipalKey(p => p.VaccineId)
                 .HasForeignKey(d => d.VaccineId)
-                .HasConstraintName("batchnumber_vaccine_id_fkey");
+                .HasConstraintName("batch_vaccine_id_fkey");
         });
 
         modelBuilder.Entity<Child>(entity =>
@@ -554,12 +552,20 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.Gender)
                 .HasMaxLength(50)
                 .HasColumnName("gender");
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasColumnName("status");
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.Staff)
+                .HasForeignKey(d => d.RoleId)
+                .HasConstraintName("fk_staff_roles_roleid");
         });
 
         modelBuilder.Entity<Template>(entity =>

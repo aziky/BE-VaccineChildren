@@ -7,6 +7,7 @@ public static class DependencyInjection
         services.Configure<RouteOptions>(options => { options.LowercaseUrls = true; });
         ConfigApplication(services);
         ConfigInfrastructure(services, configuration);
+        services.AddLogging();
     }
 
     private static void ConfigApplication(IServiceCollection services)
