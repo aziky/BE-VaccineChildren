@@ -19,15 +19,14 @@ public class DashboardController : BaseController
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAccount()
+    public async Task<IActionResult> GetAccount([FromQuery] int year)
     {
         try
         {
-            // AccountRes accountRes =  await _dashboardService.GetAccountAsync();
-            AccountRes accountRes = new AccountRes();
+            AccountRes accountRes =  await _dashboardService.GetAccountAsync(year);
             if (!accountRes.AccountDictionary.Any())
             {
-                throw new Exception();
+                throw new KeyNotFoundException("There's no account");
             }
             return Ok(BaseResponse<AccountRes>.OkResponse(accountRes, "Get account successful"));
         }

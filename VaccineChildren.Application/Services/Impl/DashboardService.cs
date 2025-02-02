@@ -19,16 +19,18 @@ public class DashboardService : IDashboardService
     }
 
 
-    public async Task<AccountRes> GetAccountAsync()
+    public async Task<AccountRes> GetAccountAsync(int year)
     {
         try
         {
             _logger.LogInformation("{ClassName} - Getting account from dashboard", nameof(DashboardService));
             var userRepository = _unitOfWork.GetRepository<User>();
             var staffRepository = _unitOfWork.GetRepository<Staff>();
+            int totalAccount = 0;
             AccountRes accountRes = new AccountRes();
 
-            IList<Staff> staffList = await staffRepository.GetAllAsync(query => query.Include(r => r.Role));
+            IList<Staff> staffList = await staffRepository.GetAllAsync(query => query.Include(r => r.Role)
+                .Where(s => s.CreatedAt.HasValue && s.CreatedAt.Value.Year == year));
 
             foreach (var staff in staffList)
             {
@@ -39,26 +41,32 @@ public class DashboardService : IDashboardService
                     case var roleName when roleName == StaticEnum.RoleEnum.Admin.Name():
                         UpdateAccountCount(accountRes, staff,
                             StaticEnum.AccountEnum.AdminWorking,
-                            StaticEnum.AccountEnum.AdminResigned);
+                            StaticEnum.AccountEnum.AdminResigned, ref totalAccount);
                         break;
 
                     case var roleName when roleName == StaticEnum.RoleEnum.Manager.Name():
                         UpdateAccountCount(accountRes, staff,
                             StaticEnum.AccountEnum.ManagerWorking,
-                            StaticEnum.AccountEnum.ManagerResigned);
+                            StaticEnum.AccountEnum.ManagerResigned, ref totalAccount);
                         break;
 
                     case var roleName when roleName == StaticEnum.RoleEnum.Staff.Name():
                         UpdateAccountCount(accountRes, staff,
                             StaticEnum.AccountEnum.StaffWorking,
-                            StaticEnum.AccountEnum.StaffResigned);
+                            StaticEnum.AccountEnum.StaffResigned, ref totalAccount);
                         break;
                 }
             }
 
-            IList<User> userList = await userRepository.GetAllAsync(query => query.Include(r => r.Role));
-            accountRes.AccountDictionary[StaticEnum.AccountEnum.UserAccount.Name()] = userList.Count;
-
+            IList<User> userList = await userRepository.GetAllAsync(query => query.Include(r => r.Role)
+                .Where(u => u.CreatedAt.HasValue && u.CreatedAt.Value.Year == year));
+            int userCount = userList.Count();
+            if (userCount == 0 || totalAccount == 0)
+            {
+                throw new KeyNotFoundException("There's no account");
+            }
+            accountRes.AccountDictionary[StaticEnum.AccountEnum.UserAccount.Name()] = userCount;
+            accountRes.AccountDictionary["totalAccount"] = totalAccount + userCount;
             _logger.LogInformation("Getting account from dashboard done");
             return accountRes;
         }
@@ -71,12 +79,13 @@ public class DashboardService : IDashboardService
     }
 
     private void UpdateAccountCount(AccountRes accountRes, Staff staff, StaticEnum.AccountEnum workingEnum, 
-        StaticEnum.AccountEnum resignedEnum)
+        StaticEnum.AccountEnum resignedEnum, ref int totalAccount)
     {
         var isActive = string.Equals(StaticEnum.StatusEnum.Active.Name(), staff.Status, StringComparison.OrdinalIgnoreCase);
         var key = isActive ? workingEnum.Name() : resignedEnum.Name();
 
         accountRes.AccountDictionary[key] = accountRes.AccountDictionary.TryGetValue(key, out int currentValue) 
                 ? currentValue + 1 : 1;
+        totalAccount += 1;
     }
 }

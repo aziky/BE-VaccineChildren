@@ -4,6 +4,7 @@ namespace VaccineChildren.Application.Services;
 
 public interface IDashboardService
 {
-    Task<AccountRes> GetAccountAsync();
+    Task<AccountRes> GetAccountAsync(int year);
+    // Task<>
     
 }

@@ -26,4 +26,13 @@ public static class StaticEnum
         [CustomName("active")] Active,
         [CustomName("inactive")] Inactive 
     }
+
+    public enum PaymentStatusEnum
+    {
+        [CustomName("pending")] Pending,
+        [CustomName("completed")] Completed,
+        [CustomName("cancelled")] Cancelled,
+        [CustomName("failed")] Failed
+    }
+    
 }
