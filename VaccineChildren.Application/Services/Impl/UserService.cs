@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using VaccineChildren.Application.DTOs.Request;
@@ -29,7 +28,6 @@ public class UserService : IUserService
         _jwtSecret = configuration["Jwt:Secret"];
         _rsaService = rsaService;
     }
-    
     // public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest)
     // {
     //     try
@@ -39,12 +37,30 @@ public class UserService : IUserService
     //
     //         var userRepository = _unitOfWork.GetRepository<User>();
     //
-    //         // Hash password using RSA
-    //         var hashedPassword = HashPassword(registerRequest.Password);
+    //         // Check if email already exists
+    //         var existingUser = await userRepository.FindByConditionAsync(
+    //             u => u.Email == registerRequest.Email);
+    //
+    //         if (existingUser != null)
+    //         {
+    //             _logger.LogWarning("Email already exists: {Email}", 
+    //                 registerRequest.Email);
+    //
+    //             return new RegisterResponse
+    //             {
+    //                 Success = false,
+    //                 Message = "Email already exists"
+    //             };
+    //         }
+    //         var hashedPassword = _rsaService.Encrypt(registerRequest.Password);
     //         registerRequest.Password = hashedPassword;
     //
+    //         // Map request to User entity
     //         var userEntity = _mapper.Map<User>(registerRequest);
+    //         userEntity.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+    //
     //         await userRepository.InsertAsync(userEntity);
+    //
     //         await _unitOfWork.SaveChangeAsync();
     //
     //         _unitOfWork.CommitTransaction();
@@ -60,7 +76,7 @@ public class UserService : IUserService
     //     {
     //         _logger.LogError("Error at register user: {Message}", e.Message);
     //         _unitOfWork.RollBack();
-    //         throw;
+    //         throw new Exception("An error occurred while registering the user", e);
     //     }
     //     finally
     //     {
@@ -76,30 +92,32 @@ public class UserService : IUserService
 
             var userRepository = _unitOfWork.GetRepository<User>();
 
-            // Check if email or username already exists
-            var existingUser = await userRepository.FindByConditionAsync(
-                u => u.Email == registerRequest.Email || u.UserName == registerRequest.UserName);
+            // Check if email already exists
+            var existingUser = await userRepository.FindByConditionAsync(u => u.Email == registerRequest.Email);
 
             if (existingUser != null)
             {
-                _logger.LogWarning("Email or Username already exists: {Email} or {Username}", 
-                    registerRequest.Email, registerRequest.UserName);
-
+                _logger.LogWarning("Email already exists: {Email}", registerRequest.Email);
                 return new RegisterResponse
                 {
                     Success = false,
-                    Message = "Email or Username already exists"
+                    Message = "Email already exists"
                 };
             }
-            // var hashedPassword = HashPassword(registerRequest.Password);
-            // registerRequest.Password = hashedPassword;
+
+            var hashedPassword = _rsaService.Encrypt(registerRequest.Password);
+            registerRequest.Password = hashedPassword;
 
             // Map request to User entity
             var userEntity = _mapper.Map<User>(registerRequest);
             userEntity.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            // Insert user into database
-            await userRepository.InsertAsync(userEntity);
 
+            // Assign the 'User' role to the new user
+            var roleRepository = _unitOfWork.GetRepository<Role>();
+            var userRole = await roleRepository.FindByConditionAsync(r => r.RoleName == "user");
+            userEntity.RoleId = userRole.RoleId;
+
+            await userRepository.InsertAsync(userEntity);
             await _unitOfWork.SaveChangeAsync();
 
             _unitOfWork.CommitTransaction();
@@ -123,15 +141,14 @@ public class UserService : IUserService
         }
     }
 
-
     public async Task<UserRes> Login(UserReq userReq)
     {
         try
         {
             var userRepository = _unitOfWork.GetRepository<User>();
 
-            // Find user by username
-            var user = await userRepository.FindByConditionAsync(u => u.UserName == userReq.UserName);
+            // Find user by email
+            var user = await userRepository.FindByConditionAsync(u => u.Email == userReq.Email);
             if (user == null || !VerifyPassword(userReq.Password, user.Password))
             {
                 _logger.LogInformation("Login failed");
@@ -155,14 +172,7 @@ public class UserService : IUserService
             _unitOfWork.Dispose();
         }
     }
-
-    // private string HashPassword(string password)
-    // {
-    //     using var rsa = RSA.Create();
-    //     var passwordBytes = Encoding.UTF8.GetBytes(password);
-    //     var encryptedBytes = rsa.Encrypt(passwordBytes, RSAEncryptionPadding.Pkcs1);
-    //     return Convert.ToBase64String(encryptedBytes);
-    // }
+    
 
     private bool VerifyPassword(string inputPassword, string encryptedPassword)
     {

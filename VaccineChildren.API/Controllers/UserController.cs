@@ -39,7 +39,12 @@ public class UserController : BaseController
     {
         try
         {
-            await _userService.RegisterUserAsync(registerRequest);
+            // await _userService.RegisterUserAsync(registerRequest);
+            RegisterResponse registerRes = await _userService.RegisterUserAsync(registerRequest);
+            if (registerRes.Success == false)
+            {
+                return BadRequest(BaseResponse<RegisterResponse>.BadRequestResponse(mess: registerRes.Message));
+            }
             return Ok(BaseResponse<string>.OkResponse(mess: "User registered successfully"));
         }
         catch (Exception ex)
