@@ -19,7 +19,7 @@ public class UserController : BaseController
         _userService = userService;
     }
 
-    [HttpPost("/login")]
+    [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] UserReq userReq)
     {
         try
@@ -27,30 +27,26 @@ public class UserController : BaseController
             var userRes = await _userService.Login(userReq);
             return Ok(BaseResponse<UserRes>.OkResponse(userRes, "Login successful"));
         }
-        catch (KeyNotFoundException e)
+        catch (Exception ex)
         {
-            _logger.LogError("Error at login: {}", e.Message);
-            return BadRequest("Invalid username or password");
-        }
-        catch (Exception e)
-        {
-            _logger.LogError("Error at login: {}", e.Message);
-            return HandleException(e, "Internal Server Error");
+            _logger.LogError(ex, "Error at login: {Message}", ex.Message);
+            return HandleException(ex, nameof(Login));
         }
     }
 
-    [HttpPost("/register")]
-    public async Task<IActionResult> Register([FromBody] UserReq userReq)
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest registerRequest)
     {
         try
         {
-             await _userService.RegisterUser(userReq);
-             return Ok(BaseResponse<string>.OkResponse(mess: "User registered successful"));
+            await _userService.RegisterUserAsync(registerRequest);
+            return Ok(BaseResponse<string>.OkResponse(mess: "User registered successfully"));
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _logger.LogError("Error at register: {}", e.Message);
-            return HandleException(e, "Internal Server Error");
+            _logger.LogError(ex, "Error at register: {Message}", ex.Message);
+            return HandleException(ex, nameof(Register));
         }
     }
+    
 }
