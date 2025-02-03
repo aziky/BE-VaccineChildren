@@ -9,6 +9,7 @@ using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Domain.Abstraction;
 using VaccineChildren.Domain.Entities;
+using VaccineChildren.Core.Store;
 
 namespace VaccineChildren.Application.Services.Impl;
 
@@ -114,7 +115,19 @@ public class UserService : IUserService
 
             // Assign the 'User' role to the new user
             var roleRepository = _unitOfWork.GetRepository<Role>();
-            var userRole = await roleRepository.FindByConditionAsync(r => r.RoleName == "user");
+            var userRole = await roleRepository.FindByConditionAsync(
+                r => r.RoleName.ToLower() == StaticEnum.RoleEnum.User.ToString().ToLower());
+            
+            if (userRole == null)
+            {
+                _logger.LogError("User role not found in database");
+                return new RegisterResponse
+                {
+                    Success = false,
+                    Message = "Error assigning user role"
+                };
+            }
+
             userEntity.RoleId = userRole.RoleId;
 
             await userRepository.InsertAsync(userEntity);
@@ -159,6 +172,7 @@ public class UserService : IUserService
             var token = GenerateJwtToken(user);
             var response = _mapper.Map<UserRes>(user);
             response.Token = token;
+            response.RoleName = user.Role?.RoleName ?? "Unknown";
 
             return response;
         }
