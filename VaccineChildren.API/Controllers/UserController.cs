@@ -29,8 +29,8 @@ public class UserController : BaseController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error at login: {Message}", ex.Message);
-            return HandleException(ex, nameof(Login));
+            _logger.LogError("{Classname} - Error at get account async cause by {}", nameof(UserController), ex.Message);
+            return HandleException(ex, nameof(UserController));
         }
     }
 
@@ -49,8 +49,8 @@ public class UserController : BaseController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error at register: {Message}", ex.Message);
-            return HandleException(ex, nameof(Register));
+            _logger.LogError("{Classname} - Error at get account async cause by {}", nameof(UserController), ex.Message);
+            return HandleException(ex, nameof(UserController));
         }
     }
     
