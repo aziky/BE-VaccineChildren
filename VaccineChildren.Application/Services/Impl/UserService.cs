@@ -29,61 +29,6 @@ public class UserService : IUserService
         _jwtSecret = configuration["Jwt:Secret"];
         _rsaService = rsaService;
     }
-    // public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest)
-    // {
-    //     try
-    //     {
-    //         _logger.LogInformation("Start registering user");
-    //         _unitOfWork.BeginTransaction();
-    //
-    //         var userRepository = _unitOfWork.GetRepository<User>();
-    //
-    //         // Check if email already exists
-    //         var existingUser = await userRepository.FindByConditionAsync(
-    //             u => u.Email == registerRequest.Email);
-    //
-    //         if (existingUser != null)
-    //         {
-    //             _logger.LogWarning("Email already exists: {Email}", 
-    //                 registerRequest.Email);
-    //
-    //             return new RegisterResponse
-    //             {
-    //                 Success = false,
-    //                 Message = "Email already exists"
-    //             };
-    //         }
-    //         var hashedPassword = _rsaService.Encrypt(registerRequest.Password);
-    //         registerRequest.Password = hashedPassword;
-    //
-    //         // Map request to User entity
-    //         var userEntity = _mapper.Map<User>(registerRequest);
-    //         userEntity.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-    //
-    //         await userRepository.InsertAsync(userEntity);
-    //
-    //         await _unitOfWork.SaveChangeAsync();
-    //
-    //         _unitOfWork.CommitTransaction();
-    //         _logger.LogInformation("User registration successful");
-    //
-    //         return new RegisterResponse
-    //         {
-    //             Success = true,
-    //             Message = "User registered successfully"
-    //         };
-    //     }
-    //     catch (Exception e)
-    //     {
-    //         _logger.LogError("Error at register user: {Message}", e.Message);
-    //         _unitOfWork.RollBack();
-    //         throw new Exception("An error occurred while registering the user", e);
-    //     }
-    //     finally
-    //     {
-    //         _unitOfWork.Dispose();
-    //     }
-    // }
     public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest)
     {
         try
@@ -113,7 +58,7 @@ public class UserService : IUserService
             var userEntity = _mapper.Map<User>(registerRequest);
             userEntity.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-            // Assign the 'User' role to the new user
+            // Assign the 'user' role to the new user
             var roleRepository = _unitOfWork.GetRepository<Role>();
             var userRole = await roleRepository.FindByConditionAsync(
                 r => r.RoleName.ToLower() == StaticEnum.RoleEnum.User.ToString().ToLower());
