@@ -613,7 +613,7 @@ public partial class VaccineSystemDbContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("full_name");
             entity.Property(e => e.Password)
-                .HasMaxLength(255)
+                .HasMaxLength(500)
                 .HasColumnName("password");
             entity.Property(e => e.Phone)
                 .HasMaxLength(50)

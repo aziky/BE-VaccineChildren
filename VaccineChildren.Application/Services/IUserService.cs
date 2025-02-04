@@ -6,6 +6,6 @@ namespace VaccineChildren.Application.Services;
 
 public interface IUserService
 {
-    Task RegisterUser(UserReq userReq);
+    Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest);
     Task<UserRes> Login(UserReq userReq);
 }

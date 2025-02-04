@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Application.Services;
@@ -8,6 +9,8 @@ namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
+// [Authorize (Roles = "User, Admin")]
 public class UserController : BaseController
 {
     private readonly ILogger<UserController> _logger;
@@ -18,8 +21,9 @@ public class UserController : BaseController
         _logger = logger;
         _userService = userService;
     }
-
-    [HttpPost("/login")]
+    
+    [AllowAnonymous]
+    [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] UserReq userReq)
     {
         try
@@ -27,30 +31,32 @@ public class UserController : BaseController
             var userRes = await _userService.Login(userReq);
             return Ok(BaseResponse<UserRes>.OkResponse(userRes, "Login successful"));
         }
-        catch (KeyNotFoundException e)
+        catch (Exception ex)
         {
-            _logger.LogError("Error at login: {}", e.Message);
-            return BadRequest("Invalid username or password");
-        }
-        catch (Exception e)
-        {
-            _logger.LogError("Error at login: {}", e.Message);
-            return HandleException(e, "Internal Server Error");
+            _logger.LogError("{Classname} - Error at get account async cause by {}", nameof(UserController), ex.Message);
+            return HandleException(ex, nameof(UserController));
         }
     }
 
-    [HttpPost("/register")]
-    public async Task<IActionResult> Register([FromBody] UserReq userReq)
+    [AllowAnonymous]
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest registerRequest)
     {
         try
         {
-             await _userService.RegisterUser(userReq);
-             return Ok(BaseResponse<string>.OkResponse(mess: "User registered successful"));
+            // await _userService.RegisterUserAsync(registerRequest);
+            RegisterResponse registerRes = await _userService.RegisterUserAsync(registerRequest);
+            if (registerRes.Success == false)
+            {
+                return BadRequest(BaseResponse<RegisterResponse>.BadRequestResponse(mess: registerRes.Message));
+            }
+            return Ok(BaseResponse<string>.OkResponse(mess: "User registered successfully"));
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _logger.LogError("Error at register: {}", e.Message);
-            return HandleException(e, "Internal Server Error");
+            _logger.LogError("{Classname} - Error at get account async cause by {}", nameof(UserController), ex.Message);
+            return HandleException(ex, nameof(UserController));
         }
     }
+    
 }
