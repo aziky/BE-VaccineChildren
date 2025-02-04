@@ -10,12 +10,7 @@ public static class DependencyInjection
         services.AddLogging();
         services.AddCors(options =>
         {
-            options.AddDefaultPolicy(builder =>
-            {
-                builder.WithOrigins("http://localhost:5173/", "http://localhost:5173/")
-                    .AllowAnyMethod()
-                    .AllowAnyHeader();
-            });
+            options.AddPolicy("AllowAll", policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
         });
     }
 
