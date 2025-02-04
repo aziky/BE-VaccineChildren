@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using VaccineChildren.Domain.Abstraction;
 using VaccineChildren.Infrastructure.Configuration;
 using VaccineChildren.Infrastructure.Implementation;
+using VaccineChildren.Application.Services;
 
 namespace VaccineChildren.Infrastructure;
 
@@ -26,6 +27,7 @@ public static class DependencyInjection
         services.AddRedis(redisSettings);
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<ICacheService, RedisCacheService>();
     }
 
     private static void AddDatabase(this IServiceCollection services, DatabaseConnection databaseSettings)

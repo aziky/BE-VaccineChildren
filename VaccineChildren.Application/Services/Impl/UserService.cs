@@ -10,6 +10,7 @@ using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Domain.Abstraction;
 using VaccineChildren.Domain.Entities;
 using VaccineChildren.Core.Store;
+using VaccineChildren.Application.Services;
 
 namespace VaccineChildren.Application.Services.Impl;
 
@@ -20,14 +21,16 @@ public class UserService : IUserService
     private readonly IMapper _mapper;
     private readonly string _jwtSecret;
     private readonly RsaService _rsaService;
+    private readonly ICacheService _cacheService;
 
-    public UserService(ILogger<IUserService> logger, IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, RsaService rsaService)
+    public UserService(ILogger<IUserService> logger, IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, RsaService rsaService, ICacheService cacheService)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _jwtSecret = configuration["Jwt:Secret"];
         _rsaService = rsaService;
+        _cacheService = cacheService;
     }
     public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest)
     {
@@ -103,21 +106,30 @@ public class UserService : IUserService
     {
         try
         {
-            var userRepository = _unitOfWork.GetRepository<User>();
+            // Try to get from cache first
+            string cacheKey = $"user_{userReq.Email}";
+            var cachedUser = await _cacheService.GetAsync<UserRes>(cacheKey);
+            if (cachedUser != null)
+            {
+                return cachedUser;
+            }
 
-            // Find user by email
+            var userRepository = _unitOfWork.GetRepository<User>();
             var user = await userRepository.FindByConditionAsync(u => u.Email == userReq.Email);
+            
             if (user == null || !VerifyPassword(userReq.Password, user.Password))
             {
                 _logger.LogInformation("Login failed");
                 throw new KeyNotFoundException("Invalid username or password");
             }
 
-            // Generate JWT token
             var token = GenerateJwtToken(user);
             var response = _mapper.Map<UserRes>(user);
             response.Token = token;
             response.RoleName = user.Role?.RoleName ?? "Unknown";
+
+            // Cache the response
+            await _cacheService.SetAsync(cacheKey, response, TimeSpan.FromHours(1));
 
             return response;
         }

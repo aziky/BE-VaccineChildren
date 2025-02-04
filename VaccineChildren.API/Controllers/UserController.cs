@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Application.Services;
@@ -8,6 +9,8 @@ namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
+// [Authorize (Roles = "User, Admin")]
 public class UserController : BaseController
 {
     private readonly ILogger<UserController> _logger;
@@ -18,7 +21,8 @@ public class UserController : BaseController
         _logger = logger;
         _userService = userService;
     }
-
+    
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] UserReq userReq)
     {
@@ -34,6 +38,7 @@ public class UserController : BaseController
         }
     }
 
+    [AllowAnonymous]
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest registerRequest)
     {
