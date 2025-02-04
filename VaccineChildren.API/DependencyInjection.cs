@@ -8,6 +8,15 @@ public static class DependencyInjection
         ConfigApplication(services);
         ConfigInfrastructure(services, configuration);
         services.AddLogging();
+        services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(builder =>
+            {
+                builder.WithOrigins("http://localhost:5173/", "http://localhost:5173/")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+            });
+        });
     }
 
     private static void ConfigApplication(IServiceCollection services)
