@@ -1,4 +1,4 @@
-﻿namespace VaccineChildren.Core.Store;
+namespace VaccineChildren.Core.Store;
 
 public static class StaticEnum
 {

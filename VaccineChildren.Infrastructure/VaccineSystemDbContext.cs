@@ -51,7 +51,7 @@ public partial class VaccineSystemDbContext : DbContext
     public virtual DbSet<VaccineManufacture> VaccineManufactures { get; set; }
 
     public virtual DbSet<VaccineReaction> VaccineReactions { get; set; }
-    
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Batch>(entity =>
@@ -537,9 +537,6 @@ public partial class VaccineSystemDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("created_by");
             entity.Property(e => e.Dob).HasColumnName("dob");
-            entity.Property(e => e.FullName)
-                .HasMaxLength(100)
-                .HasColumnName("full_name");
             entity.Property(e => e.Gender)
                 .HasMaxLength(50)
                 .HasColumnName("gender");

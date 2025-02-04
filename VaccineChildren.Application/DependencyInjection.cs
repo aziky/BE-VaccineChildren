@@ -13,5 +13,7 @@ public static class DependencyInjection
         services.AddScoped<IUserService, UserService>();
         services.AddSingleton<RsaService>();
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IStaffService, StaffService>();
+        services.AddScoped<IVaccineService, VaccineService>();
     }
 }
