@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
+using VaccineChildren.Core.Store;
 using VaccineChildren.Domain.Entities;
 
 namespace VaccineChildren.Application;

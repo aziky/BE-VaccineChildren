@@ -32,7 +32,6 @@ public partial class Staff
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
-    public virtual Role? Role { get; set; }
 
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 

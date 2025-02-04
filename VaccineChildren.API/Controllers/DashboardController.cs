@@ -9,7 +9,7 @@ namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize (Roles = "Admin")]
+// [Authorize (Roles = "Admin")]
 public class DashboardController : BaseController
 {
     private readonly ILogger<DashboardController> _logger;

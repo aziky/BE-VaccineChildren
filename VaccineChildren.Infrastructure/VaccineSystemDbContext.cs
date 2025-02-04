@@ -554,6 +554,11 @@ public partial class VaccineSystemDbContext : DbContext
             entity.HasOne(d => d.Role).WithMany(p => p.Staff)
                 .HasForeignKey(d => d.RoleId)
                 .HasConstraintName("staff_role_id_fkey");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.Status)
+                .HasColumnType("text") 
+                .HasColumnName("status");
         });
 
         modelBuilder.Entity<Template>(entity =>
@@ -629,6 +634,7 @@ public partial class VaccineSystemDbContext : DbContext
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)
                 .HasConstraintName("users_role_id_fkey");
+
         });
 
         modelBuilder.Entity<UserCart>(entity =>

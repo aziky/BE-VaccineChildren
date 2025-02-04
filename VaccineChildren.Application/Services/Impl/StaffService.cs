@@ -8,6 +8,7 @@ using VaccineChildren.Domain.Entities;
 using VaccineChildren.Core.Store;
 
 
+
 namespace VaccineChildren.Application.Services.Impl
 {
     public class StaffService : IStaffService
@@ -15,15 +16,18 @@ namespace VaccineChildren.Application.Services.Impl
         private readonly ILogger<IStaffService> _logger;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly RsaService _rsaService;
 
         private readonly IGenericRepository<User> _userRepository;
-        public StaffService(ILogger<IStaffService> logger, IUnitOfWork unitOfWork, IMapper mapper)
+        public StaffService(ILogger<IStaffService> logger, IUnitOfWork unitOfWork, IMapper mapper, RsaService rsaService)
         {
             _logger = logger;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _rsaService = rsaService; 
             _userRepository = _unitOfWork.GetRepository<User>();
         }
+
 
         public async Task CreateStaff(StaffReq staffReq)
         {
@@ -45,13 +49,13 @@ namespace VaccineChildren.Application.Services.Impl
                 {
                     throw new InvalidOperationException("Phone number already exists.");
                 }
-
+                string encryptedPassword = _rsaService.Encrypt(staffReq.Password);
                 // Tạo mới User
                 var user = new User
                 {
                     UserId = Guid.NewGuid(),
                     UserName = staffReq.Email,
-                    Password = staffReq.Password,
+                    Password = encryptedPassword,
                     FullName = staffReq.FullName,
                     Phone = staffReq.Phone,
                     Email = staffReq.Email,
@@ -68,7 +72,7 @@ namespace VaccineChildren.Application.Services.Impl
                 {
                     StaffId = Guid.NewGuid(),
                     UserId = user.UserId,
-                    RoleId = staffReq.Role == "Staff" ? 1 : 0,  // Giả sử "Staff" có RoleId là 1, còn lại là 0
+                    RoleId = staffReq.Role == "staff" ? 8 : 0,  // Giả sử "Staff" có RoleId là 1, còn lại là 0
                     Status = StaticEnum.StatusEnum.Active.ToString(),
                     CreatedAt = DateTime.UtcNow.ToLocalTime(),
                 };
