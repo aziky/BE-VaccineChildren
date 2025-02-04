@@ -56,7 +56,7 @@ public partial class VaccineSystemDbContext : DbContext
     {
         modelBuilder.Entity<Batch>(entity =>
         {
-            entity.HasKey(e => e.BatchId).HasName("batchnumber_pkey");
+            entity.HasKey(e => e.BatchId).HasName("batch_pkey");
 
             entity.ToTable("batch");
 
@@ -76,7 +76,7 @@ public partial class VaccineSystemDbContext : DbContext
             entity.HasOne(d => d.Vaccine).WithMany(p => p.Batches)
                 .HasPrincipalKey(p => p.VaccineId)
                 .HasForeignKey(d => d.VaccineId)
-                .HasConstraintName("batchnumber_vaccine_id_fkey");
+                .HasConstraintName("batch_vaccine_id_fkey");
         });
 
         modelBuilder.Entity<Child>(entity =>
@@ -290,7 +290,6 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.OrderDate)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("order_date");
-            entity.Property(e => e.PackageId).HasColumnName("package_id");
             entity.Property(e => e.PackageModified).HasColumnName("package_modified");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
@@ -310,20 +309,14 @@ public partial class VaccineSystemDbContext : DbContext
                 .HasForeignKey(d => d.ChildId)
                 .HasConstraintName("orders_child_id_fkey");
 
-            entity.HasOne(d => d.Package).WithMany(p => p.Orders)
-                .HasForeignKey(d => d.PackageId)
-                .HasConstraintName("orders_package_id_fkey");
-
-            entity.HasMany(d => d.Packages).WithMany(p => p.OrdersNavigation)
+            entity.HasMany(d => d.Packages).WithMany(p => p.Orders)
                 .UsingEntity<Dictionary<string, object>>(
                     "OrderPackage",
                     r => r.HasOne<Package>().WithMany()
                         .HasForeignKey("PackageId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
                         .HasConstraintName("order_package_package_id_fkey"),
                     l => l.HasOne<Order>().WithMany()
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
                         .HasConstraintName("order_package_order_id_fkey"),
                     j =>
                     {
@@ -339,11 +332,9 @@ public partial class VaccineSystemDbContext : DbContext
                     r => r.HasOne<VaccineManufacture>().WithMany()
                         .HasPrincipalKey("VaccineId")
                         .HasForeignKey("VaccineId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
                         .HasConstraintName("order_vaccine_vaccine_id_fkey"),
                     l => l.HasOne<Order>().WithMany()
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
                         .HasConstraintName("order_vaccine_order_id_fkey"),
                     j =>
                     {
@@ -392,11 +383,9 @@ public partial class VaccineSystemDbContext : DbContext
                     "PackageVaccine",
                     r => r.HasOne<Vaccine>().WithMany()
                         .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
                         .HasConstraintName("package_vaccine_service_id_fkey"),
                     l => l.HasOne<Package>().WithMany()
                         .HasForeignKey("PackageId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
                         .HasConstraintName("package_vaccine_package_id_fkey"),
                     j =>
                     {
@@ -554,12 +543,20 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.Gender)
                 .HasMaxLength(50)
                 .HasColumnName("gender");
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasColumnName("status");
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.Staff)
+                .HasForeignKey(d => d.RoleId)
+                .HasConstraintName("staff_role_id_fkey");
         });
 
         modelBuilder.Entity<Template>(entity =>
@@ -649,17 +646,14 @@ public partial class VaccineSystemDbContext : DbContext
 
             entity.HasOne(d => d.Child).WithMany(p => p.UserCarts)
                 .HasForeignKey(d => d.ChildId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("user_cart_child_id_fkey");
 
             entity.HasOne(d => d.Package).WithMany(p => p.UserCarts)
                 .HasForeignKey(d => d.PackageId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("user_cart_package_id_fkey");
 
             entity.HasOne(d => d.Vaccine).WithMany(p => p.UserCarts)
                 .HasForeignKey(d => d.VaccineId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("user_cart_vaccine_id_fkey");
         });
 
@@ -714,12 +708,10 @@ public partial class VaccineSystemDbContext : DbContext
 
             entity.HasOne(d => d.Manufacturer).WithMany(p => p.VaccineManufactures)
                 .HasForeignKey(d => d.ManufacturerId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("vaccine_manufactures_manufacturer_id_fkey");
 
             entity.HasOne(d => d.Vaccine).WithOne(p => p.VaccineManufacture)
                 .HasForeignKey<VaccineManufacture>(d => d.VaccineId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("vaccine_manufactures_vaccine_id_fkey");
         });
 

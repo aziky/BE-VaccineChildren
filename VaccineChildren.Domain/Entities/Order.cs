@@ -5,9 +5,7 @@ public partial class Order
     public Guid OrderId { get; set; } = Guid.NewGuid();
 
     public Guid? ChildId { get; set; }
-
-    public Guid? PackageId { get; set; }
-
+    
     public Guid? ApprovedStaff { get; set; }
 
     public DateTime? OrderDate { get; set; }
@@ -35,9 +33,7 @@ public partial class Order
     public virtual Child? Child { get; set; }
 
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
-
-    public virtual Package? Package { get; set; }
-
+    
     public virtual Payment? Payment { get; set; }
 
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
