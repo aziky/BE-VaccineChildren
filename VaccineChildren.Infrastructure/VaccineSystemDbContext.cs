@@ -51,7 +51,7 @@ public partial class VaccineSystemDbContext : DbContext
     public virtual DbSet<VaccineManufacture> VaccineManufactures { get; set; }
 
     public virtual DbSet<VaccineReaction> VaccineReactions { get; set; }
-    
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Batch>(entity =>
@@ -559,7 +559,9 @@ public partial class VaccineSystemDbContext : DbContext
                 .HasColumnName("updated_by");
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.RoleId).HasColumnName("role_id");
-            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.Status)
+                .HasColumnType("text") 
+                .HasColumnName("status");
         });
 
         modelBuilder.Entity<Template>(entity =>

@@ -12,5 +12,6 @@ public static class DependencyInjection
         services.AddAutoMapper(typeof(MappingProfile));
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IStaffService, StaffService>();
+        services.AddScoped<IVaccineService, VaccineService>();
     }
 }

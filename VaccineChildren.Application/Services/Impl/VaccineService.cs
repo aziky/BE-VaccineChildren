@@ -1,0 +1,237 @@
+using AutoMapper;
+using Microsoft.Extensions.Logging;
+using VaccineChildren.Application.DTOs.Request;
+using VaccineChildren.Application.DTOs.Response;
+using VaccineChildren.Domain.Entities;
+using VaccineChildren.Domain.Abstraction;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace VaccineChildren.Application.Services.Impl
+{
+    public class VaccineService : IVaccineService
+    {
+        private readonly ILogger<IVaccineService> _logger;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+
+        private readonly IGenericRepository<Vaccine> _vaccineRepository;
+
+        public VaccineService(ILogger<IVaccineService> logger, IUnitOfWork unitOfWork, IMapper mapper)
+        {
+            _logger = logger;
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+            _vaccineRepository = _unitOfWork.GetRepository<Vaccine>();
+        }
+
+        // 1. Create Vaccine
+        public async Task CreateVaccine(VaccineReq vaccineReq)
+        {
+            try
+            {
+                _logger.LogInformation("Start creating vaccine");
+
+                // Ensure ManufacturerId is valid
+                var manufacturer = await _unitOfWork.GetRepository<Manufacturer>().GetByIdAsync(Guid.Parse(vaccineReq.ManufacturerId));
+                if (manufacturer == null)
+                {
+                    _logger.LogError("Manufacturer not found with ID: {ManufacturerId}", vaccineReq.ManufacturerId);
+                    throw new KeyNotFoundException("Manufacturer not found");
+                }
+
+                // Create new Vaccine entity
+                var vaccine = new Vaccine
+                {
+                    VaccineId = Guid.NewGuid(),
+                    VaccineName = vaccineReq.VaccineName,
+                    Description = vaccineReq.Description,
+                    MinAge = vaccineReq.MinAge,
+                    MaxAge = vaccineReq.MaxAge,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.ToLocalTime(),
+                };
+
+                // Create VaccineManufacture and assign it to Vaccine
+                var vaccineManufacture = new VaccineManufacture
+                {
+                    ManufacturerId = manufacturer.ManufacturerId,
+                    VaccineId = vaccine.VaccineId,
+                    Price = vaccineReq.Price
+                };
+
+                // Assign the VaccineManufacture to Vaccine
+                vaccine.VaccineManufacture = vaccineManufacture;
+
+                // Insert Vaccine and related VaccineManufacture into database
+                await _vaccineRepository.InsertAsync(vaccine);
+                await _unitOfWork.SaveChangeAsync();
+
+                _logger.LogInformation("Vaccine created successfully");
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while creating vaccine: {Error}", e.Message);
+                throw;
+            }
+        }
+
+        // 2. Get Vaccine By Id
+        public async Task<VaccineRes> GetVaccineById(Guid vaccineId)
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving vaccine with ID: {VaccineId}", vaccineId);
+
+                var vaccine = await _vaccineRepository.GetByIdAsync(vaccineId);
+                if (vaccine == null)
+                {
+                    _logger.LogInformation("Vaccine not found with ID: {VaccineId}", vaccineId);
+                    throw new KeyNotFoundException("Vaccine not found");
+                }
+
+                // Get the manufacturer name from the VaccineManufacture relation
+                var manufacturerName = vaccine.VaccineManufacture?.Manufacturer?.Name;
+                var price = vaccine.VaccineManufacture?.Price ?? 0;
+
+                var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
+                vaccineRes.ManufacturerName = manufacturerName;
+                vaccineRes.Price = price;
+
+                return vaccineRes;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while retrieving vaccine: {Error}", e.Message);
+                throw;
+            }
+        }
+
+        public async Task<List<VaccineRes>> GetAllVaccines()
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving all vaccines");
+
+                var vaccines = await _vaccineRepository.GetAllAsync();
+                if (vaccines == null || vaccines.Count == 0)
+                {
+                    _logger.LogInformation("No vaccines found");
+                    return new List<VaccineRes>();
+                }
+
+                // Map to VaccineRes and set ManufacturerName and Price from related tables
+                var vaccineResList = new List<VaccineRes>();
+
+                foreach (var vaccine in vaccines)
+                {
+                    var manufacturerName = vaccine.VaccineManufacture?.Manufacturer?.Name;
+                    var price = vaccine.VaccineManufacture?.Price ?? 0;
+
+                    var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
+                    vaccineRes.ManufacturerName = manufacturerName;
+                    vaccineRes.Price = price;
+
+                    vaccineResList.Add(vaccineRes);
+                }
+
+                return vaccineResList;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while retrieving vaccines: {Error}", e.Message);
+                throw;
+            }
+        }
+
+
+        // 4. Update Vaccine
+        public async Task UpdateVaccine(Guid vaccineId, VaccineReq vaccineReq)
+        {
+            try
+            {
+                _logger.LogInformation("Start updating vaccine with ID: {VaccineId}", vaccineId);
+
+                var vaccine = await _vaccineRepository.GetByIdAsync(vaccineId);
+
+                if (vaccine == null)
+                {
+                    _logger.LogInformation("Vaccine not found with ID: {VaccineId}", vaccineId);
+                    throw new KeyNotFoundException("Vaccine not found");
+                }
+
+                // Update vaccine properties
+                vaccine.VaccineName = vaccineReq.VaccineName;
+                vaccine.Description = vaccineReq.Description;
+                vaccine.MinAge = vaccineReq.MinAge;
+                vaccine.MaxAge = vaccineReq.MaxAge;
+
+                // Ensure Manufacturer is valid
+                var manufacturer = await _unitOfWork.GetRepository<Manufacturer>().GetByIdAsync(Guid.Parse(vaccineReq.ManufacturerId));
+                if (manufacturer == null)
+                {
+                    _logger.LogError("Manufacturer not found with ID: {ManufacturerId}", vaccineReq.ManufacturerId);
+                    throw new KeyNotFoundException("Manufacturer not found");
+                }
+
+                // Update the VaccineManufacture for the vaccine
+                if (vaccine.VaccineManufacture == null)
+                {
+                    vaccine.VaccineManufacture = new VaccineManufacture
+                    {
+                        ManufacturerId = manufacturer.ManufacturerId,
+                        VaccineId = vaccine.VaccineId,
+                        Price = vaccineReq.Price
+                    };
+                }
+                else
+                {
+                    vaccine.VaccineManufacture.Price = vaccineReq.Price;
+                    vaccine.VaccineManufacture.ManufacturerId = manufacturer.ManufacturerId;
+                }
+
+                vaccine.UpdatedAt = DateTime.UtcNow.ToLocalTime();
+
+                await _vaccineRepository.UpdateAsync(vaccine);
+                await _unitOfWork.SaveChangeAsync();
+
+                _logger.LogInformation("Vaccine updated successfully");
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while updating vaccine: {Error}", e.Message);
+                throw;
+            }
+        }
+
+
+        // 5. Delete Vaccine
+        public async Task DeleteVaccine(Guid vaccineId)
+        {
+            try
+            {
+                _logger.LogInformation("Start deleting vaccine with ID: {VaccineId}", vaccineId);
+
+                var vaccine = await _vaccineRepository.GetByIdAsync(vaccineId);
+
+                if (vaccine == null)
+                {
+                    _logger.LogInformation("Vaccine not found with ID: {VaccineId}", vaccineId);
+                    throw new KeyNotFoundException("Vaccine not found");
+                }
+
+                vaccine.IsActive = false; // Đánh dấu vaccine là đã bị xóa (inactive)
+                await _vaccineRepository.UpdateAsync(vaccine);
+                await _unitOfWork.SaveChangeAsync();
+
+                _logger.LogInformation("Vaccine deleted successfully");
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while deleting vaccine: {Error}", e.Message);
+                throw;
+            }
+        }
+    }
+}

@@ -5,6 +5,8 @@ using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Domain.Abstraction;
 using VaccineChildren.Domain.Entities;
+using VaccineChildren.Core.Store;
+
 
 namespace VaccineChildren.Application.Services.Impl
 {
@@ -14,11 +16,13 @@ namespace VaccineChildren.Application.Services.Impl
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
+        private readonly IGenericRepository<User> _userRepository;
         public StaffService(ILogger<IStaffService> logger, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _logger = logger;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _userRepository = _unitOfWork.GetRepository<User>();
         }
 
         public async Task CreateStaff(StaffReq staffReq)
@@ -27,10 +31,22 @@ namespace VaccineChildren.Application.Services.Impl
             {
                 _logger.LogInformation("Start creating staff");
 
-                // Begin the transaction
+                // Bắt đầu giao dịch
                 _unitOfWork.BeginTransaction();
 
-                // Create a new User for the staff
+                var userRepository = _unitOfWork.GetRepository<User>();
+                var existingEmail = await userRepository.FindByConditionAsync(u => u.Email == staffReq.Email);
+                var existingPhone = await userRepository.FindByConditionAsync(u => u.Phone == staffReq.Phone);
+                if (existingEmail != null)
+                {
+                    throw new InvalidOperationException("Email already exists.");
+                }
+                if (existingPhone != null)
+                {
+                    throw new InvalidOperationException("Phone number already exists.");
+                }
+
+                // Tạo mới User
                 var user = new User
                 {
                     UserId = Guid.NewGuid(),
@@ -43,28 +59,26 @@ namespace VaccineChildren.Application.Services.Impl
                     CreatedAt = DateTime.UtcNow.ToLocalTime(),
                 };
 
-                // Insert the user into the database
-                var userRepository = _unitOfWork.GetRepository<User>();
+                // Chèn User vào cơ sở dữ liệu
                 await userRepository.InsertAsync(user);
                 await _unitOfWork.SaveChangeAsync();
 
-                // Create the staff linked to the user
+                // Tạo mới Staff
                 var staff = new Staff
                 {
                     StaffId = Guid.NewGuid(),
                     UserId = user.UserId,
-                    RoleId = staffReq.Role == "Staff" ? 1 : 2, // Assuming 1 is Admin and 2 is Staff (change this according to your role logic)
-                    Status = true,
+                    RoleId = staffReq.Role == "Staff" ? 1 : 0,  // Giả sử "Staff" có RoleId là 1, còn lại là 0
+                    Status = StaticEnum.StatusEnum.Active.ToString(),
                     CreatedAt = DateTime.UtcNow.ToLocalTime(),
-
                 };
 
-                // Insert the staff into the database
+                // Chèn Staff vào cơ sở dữ liệu
                 var staffRepository = _unitOfWork.GetRepository<Staff>();
                 await staffRepository.InsertAsync(staff);
                 await _unitOfWork.SaveChangeAsync();
 
-                // Commit the transaction
+                // Cam kết giao dịch
                 _unitOfWork.CommitTransaction();
                 _logger.LogInformation("Staff created successfully");
             }
@@ -95,8 +109,7 @@ namespace VaccineChildren.Application.Services.Impl
                     _logger.LogInformation("Staff not found with ID: {StaffId}", staffId);
                     throw new KeyNotFoundException("Staff not found");
                 }
-
-                staff.Status = false; // Soft delete by changing status
+                staff.Status = StaticEnum.StatusEnum.Inactive.ToString();
                 await staffRepository.UpdateAsync(staff);
                 await _unitOfWork.SaveChangeAsync();
 
@@ -131,22 +144,31 @@ namespace VaccineChildren.Application.Services.Impl
                     throw new KeyNotFoundException("Staff not found");
                 }
 
-                // Update Staff entity
-                staff.Status = true; // You may adjust status update logic as needed
+                // Cập nhật thông tin Staff
+                staff.Status = StaticEnum.StatusEnum.Active.ToString();
                 staff.UpdatedAt = DateTime.UtcNow.ToLocalTime();
 
                 var userRepository = _unitOfWork.GetRepository<User>();
                 var user = await userRepository.GetByIdAsync(staff.UserId);
+                var existingEmail = await userRepository.FindByConditionAsync(u => u.Email == staffReq.Email);
+                var existingPhone = await userRepository.FindByConditionAsync(u => u.Phone == staffReq.Phone);
+                if (existingEmail != null)
+                {
+                    throw new InvalidOperationException("Email already exists.");
+                }
+                if (existingPhone != null)
+                {
+                    throw new InvalidOperationException("Phone number already exists.");
+                }
 
+                // Cập nhật thông tin User
                 if (user != null)
                 {
-                    // Update User info
                     user.FullName = staffReq.FullName;
                     user.Phone = staffReq.Phone;
                     user.Email = staffReq.Email;
                     user.Address = staffReq.Address;
                     user.UpdatedAt = DateTime.UtcNow.ToLocalTime();
-
 
                     await userRepository.UpdateAsync(user);
                 }
@@ -201,22 +223,32 @@ namespace VaccineChildren.Application.Services.Impl
         {
             try
             {
-                _logger.LogInformation("Retrieving all staff");
+                _logger.LogInformation("Đang lấy danh sách tất cả nhân viên (bao gồm cả nhân viên đã bị xóa)");
 
                 var staffRepository = _unitOfWork.GetRepository<Staff>();
 
-                // Eager loading để tải đầy đủ thông tin User và Role
-                var staffList = await staffRepository.GetAllAsync(include =>
-                    include.Where(s => s.Status == true)
-                           .Include(s => s.User)  // Eager load User
-                           .Include(s => s.Role)); // Eager load Role
+                // Tạo truy vấn cơ bản cho tất cả nhân viên và bao gồm các thực thể liên quan (User, Role)
+                var query = staffRepository.Entities  // Sử dụng thuộc tính Entities (IQueryable<Staff>)
+                    .Include(s => s.User)  // Tải dữ liệu liên quan đến User
+                    .Include(s => s.Role)  // Tải dữ liệu liên quan đến Role
+                    .OrderByDescending(s => s.Status == StaticEnum.StatusEnum.Active.ToString())  // Sắp xếp theo trạng thái (Active lên trên)
+                    .ThenBy(s => s.Status); // Sắp xếp các nhân viên `Inactive` xuống dưới
 
-                // Ánh xạ từ Staff sang StaffRes, sử dụng AutoMapper
+                // Thực thi truy vấn và lấy kết quả
+                var staffList = await query.ToListAsync();
+
+                if (staffList == null || !staffList.Any())
+                {
+                    _logger.LogInformation("Không tìm thấy nhân viên nào");
+                    return new List<StaffRes>();
+                }
+
+                // Chuyển đổi các thực thể Staff thành các DTO phản hồi
                 return _mapper.Map<List<StaffRes>>(staffList);
             }
             catch (Exception e)
             {
-                _logger.LogError("Error while retrieving staff: {Error}", e.Message);
+                _logger.LogError("Lỗi khi lấy danh sách nhân viên: {Error}", e.Message);
                 throw;
             }
             finally
@@ -224,6 +256,7 @@ namespace VaccineChildren.Application.Services.Impl
                 _unitOfWork.Dispose();
             }
         }
+
 
     }
 }

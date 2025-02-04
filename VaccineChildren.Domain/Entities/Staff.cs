@@ -18,7 +18,7 @@ public partial class Staff
 
     public string? UpdatedBy { get; set; }
 
-    public bool Status { get; set; }
+    public string Status { get; set; }
 
     public Guid UserId { get; set; }
 
