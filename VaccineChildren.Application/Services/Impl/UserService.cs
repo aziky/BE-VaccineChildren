@@ -56,7 +56,7 @@ public class UserService : IUserService
 
             // Map request to User entity
             var userEntity = _mapper.Map<User>(registerRequest);
-            userEntity.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            userEntity.CreatedAt = DateTime.UtcNow.ToLocalTime();
 
             // Assign the 'user' role to the new user
             var roleRepository = _unitOfWork.GetRepository<Role>();
