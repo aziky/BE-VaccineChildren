@@ -8,6 +8,10 @@ public static class DependencyInjection
         ConfigApplication(services);
         ConfigInfrastructure(services, configuration);
         services.AddLogging();
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAll", policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+        });
     }
 
     private static void ConfigApplication(IServiceCollection services)
