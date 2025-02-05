@@ -693,6 +693,9 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.VaccineName)
                 .HasMaxLength(100)
                 .HasColumnName("vaccine_name");
+            entity.Property(e => e.Image)
+                .HasMaxLength(255)
+                .HasColumnName("image");
         });
 
         modelBuilder.Entity<VaccineManufacture>(entity =>
