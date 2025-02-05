@@ -13,7 +13,7 @@ public partial class Vaccine
     public int? MaxAge { get; set; }
 
     public int? NumberDose { get; set; }
-
+    public string? Image { get; set; }
     public int? Duration { get; set; }
 
     public string? Unit { get; set; }
