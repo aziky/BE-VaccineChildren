@@ -24,5 +24,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName));
         CreateMap<VaccineReq, Vaccine>();
         CreateMap<Vaccine, VaccineRes>();
+        CreateMap<ManufacturerReq, Manufacturer>();
+        CreateMap<Manufacturer, ManufacturerRes>();
     }
 }

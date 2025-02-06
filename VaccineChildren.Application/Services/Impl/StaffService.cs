@@ -62,8 +62,7 @@ namespace VaccineChildren.Application.Services.Impl
                     Email = staffReq.Email,
                     Address = staffReq.Address,
                     CreatedAt = DateTime.UtcNow.ToLocalTime(),
-                    CreatedBy = staffReq.CreatedBy,
-                    RoleId = staffReq.RoleId,
+                    RoleId = 2,
                 };
 
                 // Chèn User vào cơ sở dữ liệu
@@ -75,13 +74,12 @@ namespace VaccineChildren.Application.Services.Impl
                 {
                     StaffId = Guid.NewGuid(),
                     UserId = user.UserId,
-                    RoleId = staffReq.RoleId,
+                    RoleId = 2,
                     Dob = staffReq.Dob,  
                     Gender = staffReq.Gender,  
                     BloodType = staffReq.BloodType,
                     Status = StaticEnum.StatusEnum.Active.ToString(),
                     CreatedAt = DateTime.UtcNow.ToLocalTime(),
-                    CreatedBy = user.UserId.ToString()
                 };
 
                 // Chèn Staff vào cơ sở dữ liệu
