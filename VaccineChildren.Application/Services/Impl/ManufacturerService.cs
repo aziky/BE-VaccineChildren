@@ -32,10 +32,12 @@ namespace VaccineChildren.Application.Services.Impl
             {
                 _logger.LogInformation("Creating new manufacturer");
 
+                // _unitOfWork.BeginTransaction();
                 var manufacturer = _mapper.Map<Manufacturer>(manufacturerReq);
                 manufacturer.ManufacturerId = Guid.NewGuid();
                 manufacturer.IsActive = true;
                 manufacturer.CreatedAt = DateTime.Now;
+                // manufacturer.CreatedBy = UserToken.UserId;
 
                 await _manufacturerRepository.InsertAsync(manufacturer);
                 await _unitOfWork.SaveChangeAsync();

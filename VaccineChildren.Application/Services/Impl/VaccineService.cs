@@ -50,6 +50,10 @@ namespace VaccineChildren.Application.Services.Impl
                     MinAge = vaccineReq.MinAge,
                     MaxAge = vaccineReq.MaxAge,
                     IsActive = true,
+                    NumberDose = vaccineReq.NumberDose,
+                    Unit = vaccineReq.Unit,
+                    Duration = vaccineReq.Duration,
+                    Image = vaccineReq.Image,
                     CreatedAt = DateTime.UtcNow.ToLocalTime(),
                 };
 
@@ -167,6 +171,11 @@ namespace VaccineChildren.Application.Services.Impl
                 vaccine.MinAge = vaccineReq.MinAge;
                 vaccine.MaxAge = vaccineReq.MaxAge;
                 vaccine.IsActive = vaccineReq.IsActive;
+                vaccine.Duration = vaccineReq.Duration;
+                vaccine.NumberDose = vaccineReq.NumberDose;
+                vaccine.Unit = vaccineReq.Unit;
+                vaccine.Image = vaccineReq.Image;
+
 
                 // Ensure Manufacturer is valid
                 var manufacturer = await _unitOfWork.GetRepository<Manufacturer>().GetByIdAsync(Guid.Parse(vaccineReq.ManufacturerId));
