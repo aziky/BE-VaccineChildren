@@ -31,7 +31,7 @@ public class DashboardService : IDashboardService
             AccountRes accountRes = new AccountRes();
 
             IList<Staff> staffList = await staffRepository.GetAllAsync(query => query.Include(r => r.Role)
-                .Where(s => s.CreatedAt.HasValue && s.CreatedAt.Value.Year == year));
+                .Where(s => s.CreatedAt.HasValue && s.CreatedAt.Value.Year <= year));
 
             foreach (var staff in staffList)
             {
@@ -60,7 +60,7 @@ public class DashboardService : IDashboardService
             }
 
             IList<User> userList = await userRepository.GetAllAsync(query => query.Include(r => r.Role)
-                .Where(u => u.CreatedAt.HasValue && u.CreatedAt.Value.Year == year &&
+                .Where(u => u.CreatedAt.HasValue && u.CreatedAt.Value.Year <= year &&
                             u.Role.RoleName.ToLower() == StaticEnum.RoleEnum.User.Name()));
             int userCount = userList.Count;
             if (userCount == 0 || totalAccount == 0)
