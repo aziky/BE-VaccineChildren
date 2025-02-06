@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace VaccineChildren.Application.DTOs.Response;
 
 public class StaffRes
@@ -9,6 +11,8 @@ public class StaffRes
     public string Address { get; set; }
     public string Role { get; set; }
     public string Status { get; set; }
+
+    [JsonConverter(typeof(DateOnlyJsonConverter))]
     public DateOnly? Dob { get; set; }
 
     public string? Gender { get; set; }
