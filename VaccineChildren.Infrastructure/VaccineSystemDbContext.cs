@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using VaccineChildren.Domain.Entities;
 
 namespace VaccineChildren.Infrastructure;
 
 public partial class VaccineSystemDbContext : DbContext
 {
+    
     public VaccineSystemDbContext()
     {
     }
@@ -52,8 +54,12 @@ public partial class VaccineSystemDbContext : DbContext
 
     public virtual DbSet<VaccineReaction> VaccineReactions { get; set; }
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
+            v => v.ToUniversalTime(),    // Chuyển sang UTC trước khi lưu vào DB
+            v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
         modelBuilder.Entity<Batch>(entity =>
         {
             entity.HasKey(e => e.BatchId).HasName("batch_pkey");
@@ -205,7 +211,7 @@ public partial class VaccineSystemDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("country_name");
             entity.Property(e => e.CreatedAt)
-                .HasColumnType("timestamp without time zone")
+                .HasConversion(dateTimeConverter)
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy)
                 .HasMaxLength(255)
@@ -219,7 +225,7 @@ public partial class VaccineSystemDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("short_name");
             entity.Property(e => e.UpdatedAt)
-                .HasColumnType("timestamp without time zone")
+                .HasConversion(dateTimeConverter)
                 .HasColumnName("updated_at");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
