@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration; 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
 using VaccineChildren.Domain.Abstraction;
 using VaccineChildren.Infrastructure.Configuration;
 using VaccineChildren.Infrastructure.Implementation;
@@ -41,6 +42,11 @@ public static class DependencyInjection
 
     private static void AddRedis(this IServiceCollection services, RedisConnection redisSettings)
     {
-        services.AddStackExchangeRedisCache(options => options.Configuration = redisSettings.GetConnectionString());
+        // Thay thế AddStackExchangeRedisCache bằng đăng ký trực tiếp ConnectionMultiplexer
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+        {
+            var configuration = ConfigurationOptions.Parse(redisSettings.GetConnectionString());
+            return ConnectionMultiplexer.Connect(configuration);
+        });
     }
 }

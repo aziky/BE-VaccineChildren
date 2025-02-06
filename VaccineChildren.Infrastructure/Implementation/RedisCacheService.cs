@@ -1,34 +1,33 @@
-using Microsoft.Extensions.Caching.Distributed;
+using StackExchange.Redis;
 using System.Text.Json;
-using VaccineChildren.Application.Services;
 
 public class RedisCacheService : ICacheService
 {
-    private readonly IDistributedCache _cache;
+    private readonly IConnectionMultiplexer _redisConnection;
+    private readonly IDatabase _cache;
 
-    public RedisCacheService(IDistributedCache cache)
+    public RedisCacheService(IConnectionMultiplexer redisConnection)
     {
-        _cache = cache;
+        _redisConnection = redisConnection;
+        _cache = redisConnection.GetDatabase();
     }
 
     public async Task<T?> GetAsync<T>(string key)
     {
-        var value = await _cache.GetStringAsync(key);
-        return value == null ? default : JsonSerializer.Deserialize<T>(value);
+        var value = await _cache.StringGetAsync(key);
+        if (value.IsNull)
+            return default;
+        return JsonSerializer.Deserialize<T>(value!);
     }
 
     public async Task SetAsync<T>(string key, T value, TimeSpan? expirationTime = null)
     {
-        var options = new DistributedCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = expirationTime ?? TimeSpan.FromHours(1)
-        };
-        
-        await _cache.SetStringAsync(key, JsonSerializer.Serialize(value), options);
+        var serializedValue = JsonSerializer.Serialize(value);
+        await _cache.StringSetAsync(key, serializedValue, expirationTime ?? TimeSpan.FromHours(1));
     }
 
     public async Task RemoveAsync(string key)
     {
-        await _cache.RemoveAsync(key);
+        await _cache.KeyDeleteAsync(key);
     }
-} 
+}
