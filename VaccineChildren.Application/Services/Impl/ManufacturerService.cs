@@ -36,6 +36,7 @@ namespace VaccineChildren.Application.Services.Impl
                 manufacturer.ManufacturerId = Guid.NewGuid();
                 manufacturer.IsActive = true;
                 manufacturer.CreatedAt = DateTime.UtcNow;
+                manufacturer.IsActive = true;
 
                 await _manufacturerRepository.InsertAsync(manufacturer);
                 await _unitOfWork.SaveChangeAsync();
@@ -114,6 +115,7 @@ namespace VaccineChildren.Application.Services.Impl
                 manufacturer.Description = manufacturerReq.Description;
                 manufacturer.CountryName = manufacturerReq.CountryName;
                 manufacturer.CountryCode = manufacturerReq.CountryCode;
+                manufacturer.IsActive = manufacturerReq.IsActive;   
                 manufacturer.UpdatedAt = DateTime.UtcNow;
 
                 await _manufacturerRepository.UpdateAsync(manufacturer);

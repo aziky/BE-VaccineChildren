@@ -166,6 +166,7 @@ namespace VaccineChildren.Application.Services.Impl
                 vaccine.Description = vaccineReq.Description;
                 vaccine.MinAge = vaccineReq.MinAge;
                 vaccine.MaxAge = vaccineReq.MaxAge;
+                vaccine.IsActive = vaccineReq.IsActive;
 
                 // Ensure Manufacturer is valid
                 var manufacturer = await _unitOfWork.GetRepository<Manufacturer>().GetByIdAsync(Guid.Parse(vaccineReq.ManufacturerId));

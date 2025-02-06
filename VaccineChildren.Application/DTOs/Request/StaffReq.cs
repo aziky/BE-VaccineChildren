@@ -15,5 +15,5 @@ public class StaffReq
 
     public string? BloodType { get; set; }
 
-
+    public string? Status { get; set; } 
 }

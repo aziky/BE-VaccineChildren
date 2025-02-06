@@ -13,4 +13,6 @@ public class ManufacturerReq
 
     public string? CountryCode { get; set; }
 
+    public bool? IsActive { get; set; }
+
 }
