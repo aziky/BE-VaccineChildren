@@ -231,8 +231,8 @@ namespace VaccineChildren.Application.Services.Impl
                 var staffList = await staffRepository.Entities
                     .Include(s => s.User)
                     .Include(s => s.Role)
-                    .Where(s => s.Role.RoleName == StaticEnum.RoleEnum.Staff.ToString())
-                    .OrderByDescending(s => s.Status == StaticEnum.StatusEnum.Active.ToString())
+                    .Where(s => s.Role.RoleName == StaticEnum.RoleEnum.Staff.ToString().ToLower())
+                    .OrderByDescending(s => s.Status == StaticEnum.StatusEnum.Active.ToString().ToLower())
                     .ThenBy(s => s.Status)
                     .ToListAsync();
 
