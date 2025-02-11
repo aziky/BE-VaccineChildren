@@ -30,7 +30,7 @@ namespace VaccineChildren.API.Controllers
             {
                 _logger.LogInformation("Creating new vaccine");
                 await _vaccineService.CreateVaccine(vaccineReq);
-                return Ok(BaseResponse<string>.OkResponse(null, "Vaccine created successfully"));
+                return Ok(BaseResponse<List<VaccineRes>>.OkResponse(null, "Vaccine created successfully"));
             }
             catch (Exception e)
             {
@@ -121,5 +121,71 @@ namespace VaccineChildren.API.Controllers
                 return HandleException(e, "Internal Server Error");
             }
         }
+
+        [HttpGet("9-months-age")]
+        public async Task<IActionResult> GetAllVaccines9MonthAge()
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving vaccines with MinAge = 0, MaxAge = 9, Unit = 'month'");
+                var vaccines = await _vaccineService.GetAllVaccines9MonthAge();
+                return Ok(BaseResponse<List<VaccineRes>>.OkResponse(vaccines, "Vaccines retrieved successfully"));
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while retrieving vaccines: {Error}", e.Message);
+                return HandleException(e, "Internal Server Error");
+            }
+        }
+
+        [HttpGet("12-months-age")]
+        public async Task<IActionResult> GetAllVaccines12MonthAge()
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving vaccines with MinAge = 0, MaxAge = 12, Unit = 'month'");
+                var vaccines = await _vaccineService.GetAllVaccines12MonthAge();
+                return Ok(BaseResponse<List<VaccineRes>>.OkResponse(vaccines, "Vaccines retrieved successfully"));
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while retrieving vaccines: {Error}", e.Message);
+                return HandleException(e, "Internal Server Error");
+            }
+        }
+
+        [HttpGet("24-months-age")]
+        public async Task<IActionResult> GetAllVaccines24MonthAge()
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving vaccines with MinAge = 0, MaxAge = 24, Unit = 'month'");
+                var vaccines = await _vaccineService.GetAllVaccines24MonthAge();
+                return Ok(BaseResponse<List<VaccineRes>>.OkResponse(vaccines, "Vaccines retrieved successfully"));
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while retrieving vaccines: {Error}", e.Message);
+                return HandleException(e, "Internal Server Error");
+            }
+        }
+
+        [HttpGet("4-8-years-age")]
+        public async Task<IActionResult> GetAllVaccines4To8YearsAge()
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving vaccines with MinAge >= 4, MaxAge <= 8, Unit = 'year'");
+
+                var vaccines = await _vaccineService.GetAllVaccines4To8YearsAge();
+                return Ok(BaseResponse<List<VaccineRes>>.OkResponse(vaccines, "Vaccines retrieved successfully"));
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while retrieving vaccines: {Error}", e.Message);
+                return HandleException(e, "Internal Server Error");
+            }
+        }
+
     }
 }

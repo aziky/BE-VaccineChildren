@@ -215,7 +215,6 @@ namespace VaccineChildren.Application.Services.Impl
             }
         }
 
-
         // 5. Delete Vaccine
         public async Task DeleteVaccine(Guid vaccineId)
         {
@@ -243,5 +242,146 @@ namespace VaccineChildren.Application.Services.Impl
                 throw;
             }
         }
+
+        public async Task<List<VaccineRes>> GetAllVaccines9MonthAge()
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving vaccines with MinAge = 0, MaxAge = 9, Unit = 'month'");
+
+                var vaccines = await _vaccineRepository.GetAllAsync();
+                var filteredVaccines = vaccines
+                    .Where(v => v.MinAge >= 0 && v.MaxAge <= 9 && v.Unit == "month")
+                    .ToList();
+
+                if (!filteredVaccines.Any())
+                {
+                    _logger.LogInformation("No matching vaccines found");
+                    return new List<VaccineRes>();
+                }
+
+                var vaccineResList = filteredVaccines.Select(vaccine =>
+                {
+                    var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
+                    vaccineRes.ManufacturerName = vaccine.VaccineManufacture?.Manufacturer?.Name;
+                    vaccineRes.Price = vaccine.VaccineManufacture?.Price ?? 0;
+                    return vaccineRes;
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} vaccines matching criteria", vaccineResList.Count);
+                return vaccineResList;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while retrieving filtered vaccines: {Error}", e.Message);
+                throw;
+            }
+        }
+
+        public async Task<List<VaccineRes>> GetAllVaccines12MonthAge()
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving vaccines with MinAge = 0, MaxAge = 12, Unit = 'month'");
+
+                var vaccines = await _vaccineRepository.GetAllAsync();
+                var filteredVaccines = vaccines
+                    .Where(v => v.MinAge >= 0 && v.MaxAge <= 12 && v.Unit == "month")
+                    .ToList();
+
+                if (!filteredVaccines.Any())
+                {
+                    _logger.LogInformation("No matching vaccines found");
+                    return new List<VaccineRes>();
+                }
+
+                var vaccineResList = filteredVaccines.Select(vaccine =>
+                {
+                    var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
+                    vaccineRes.ManufacturerName = vaccine.VaccineManufacture?.Manufacturer?.Name;
+                    vaccineRes.Price = vaccine.VaccineManufacture?.Price ?? 0;
+                    return vaccineRes;
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} vaccines matching criteria", vaccineResList.Count);
+                return vaccineResList;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while retrieving filtered vaccines: {Error}", e.Message);
+                throw;
+            }
+        }
+
+        public async Task<List<VaccineRes>> GetAllVaccines24MonthAge()
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving vaccines with MinAge >= 0, MaxAge <= 24, Unit = 'month'");
+
+                var vaccines = await _vaccineRepository.GetAllAsync();
+                var filteredVaccines = vaccines
+                    .Where(v => v.MinAge >= 0 && v.MaxAge <= 24 && v.Unit == "month")
+                    .ToList();
+
+                if (!filteredVaccines.Any())
+                {
+                    _logger.LogInformation("No matching vaccines found");
+                    return new List<VaccineRes>();
+                }
+
+                var vaccineResList = filteredVaccines.Select(vaccine =>
+                {
+                    var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
+                    vaccineRes.ManufacturerName = vaccine.VaccineManufacture?.Manufacturer?.Name;
+                    vaccineRes.Price = vaccine.VaccineManufacture?.Price ?? 0;
+                    return vaccineRes;
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} vaccines matching criteria", vaccineResList.Count);
+                return vaccineResList;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while retrieving filtered vaccines: {Error}", e.Message);
+                throw;
+            }
+        }
+
+        public async Task<List<VaccineRes>> GetAllVaccines4To8YearsAge()
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving vaccines with MinAge >= 4, MaxAge <= 8, Unit = 'year'");
+
+                var vaccines = await _vaccineRepository.GetAllAsync();
+                var filteredVaccines = vaccines
+                    .Where(v => v.MinAge >= 4 && v.MaxAge <= 8 && v.Unit == "year")
+                    .ToList();
+
+                if (!filteredVaccines.Any())
+                {
+                    _logger.LogInformation("No matching vaccines found");
+                    return new List<VaccineRes>();
+                }
+
+                var vaccineResList = filteredVaccines.Select(vaccine =>
+                {
+                    var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
+                    vaccineRes.ManufacturerName = vaccine.VaccineManufacture?.Manufacturer?.Name;
+                    vaccineRes.Price = vaccine.VaccineManufacture?.Price ?? 0;
+                    return vaccineRes;
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} vaccines matching criteria", vaccineResList.Count);
+                return vaccineResList;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while retrieving filtered vaccines: {Error}", e.Message);
+                throw;
+            }
+        }
+
     }
 }
