@@ -85,4 +85,9 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task InsertRangeAsync(IEnumerable<T> entities)
+    {
+        await _context.Set<T>().AddRangeAsync(entities);
+    }
 }

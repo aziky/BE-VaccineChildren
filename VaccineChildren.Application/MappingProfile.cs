@@ -28,7 +28,9 @@ public class MappingProfile : Profile
         CreateMap<ManufacturerReq, Manufacturer>();
         CreateMap<Manufacturer, ManufacturerRes>();
 
-        CreateMap<CreateAppointmentReq, Child>();
+        CreateMap<CreateOrderReq, Child>()
+            .ForMember(dest => dest.Dob, opt => opt.Ignore())
+            .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender.ToLower()));
 
 
     }

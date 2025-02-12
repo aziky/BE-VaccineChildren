@@ -2,7 +2,7 @@
 
 namespace VaccineChildren.Application.Services;
 
-public interface IAppointmentService
+public interface IOrderService
 {
-     Task CreateAppointmentAsync(CreateAppointmentReq request);
+     Task CreateAppointmentAsync(CreateOrderReq request);
 }
