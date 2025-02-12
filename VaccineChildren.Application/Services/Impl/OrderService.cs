@@ -23,7 +23,7 @@ public class OrderService : IOrderService
         _mapper = mapper;
     }
 
-    public async Task CreateAppointmentAsync(CreateOrderReq request)
+    public async Task CreateOrderAsync(CreateOrderReq request)
     {
         try
         {
@@ -35,6 +35,7 @@ public class OrderService : IOrderService
             var vaccineManuRepository = _unitOfWork.GetRepository<VaccineManufacture>();
             var orderRepository = _unitOfWork.GetRepository<Order>();
             var userCartRepository = _unitOfWork.GetRepository<UserCart>();
+            var paymentRepository = _unitOfWork.GetRepository<Payment>();
 
             var user = await userRepository.GetByIdAsync(Guid.Parse(request.UserId));
             if (user == null)
@@ -86,9 +87,22 @@ public class OrderService : IOrderService
                     }
                 }
             }
-
+            
             if (userCartList.Count != 0) await userCartRepository.InsertRangeAsync(userCartList);
             await orderRepository.InsertAsync(order);
+            
+            var payment = new Payment
+            {
+                OrderId = order.OrderId,
+                UserId = user.UserId,
+                Amount = (decimal) request.Amount,
+                PaymentMethod = StaticEnum.PaymentMethodEnum.VnPay.Name(),
+                PaymentStatus = StaticEnum.PaymentStatusEnum.Pending.Name(),
+                CreatedAt = order.CreatedAt,
+                CreatedBy = order.CreatedBy
+            };
+
+            await paymentRepository.InsertAsync(payment);
 
             await _unitOfWork.SaveChangeAsync();
              _unitOfWork.CommitTransaction();

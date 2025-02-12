@@ -41,5 +41,10 @@ public static class StaticEnum
         [CustomName("completed")] Completed,
         [CustomName("cancelled")] Cancelled,
     }
+
+    public enum PaymentMethodEnum
+    {
+        [CustomName("VN Pay")] VnPay,
+    }
     
 }
