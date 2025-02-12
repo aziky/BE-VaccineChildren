@@ -9,7 +9,7 @@ public interface IGenericRepository<T> where T : class
     Task<T?> FindByConditionAsync(Expression<Func<T, bool>> predicate);
     Task<IList<T>> GetAllAsync(Expression<Func<IQueryable<T>, IQueryable<T>>>? include);
     Task<IList<T>> GetAllAsync();
-    Task<BasePaginatedList<T>> GetPagging(IQueryable<T> query, int index, int pageSize);
+    Task<BasePaginatedList<T>> GetPagging(IQueryable<T> query, int index, int pageSize);    
     Task<T?> GetByIdNoTracking(object id);
     Task<T?> GetByIdAsync(object id);
     Task<T> InsertAsync(T entity);

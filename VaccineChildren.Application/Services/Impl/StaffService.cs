@@ -75,8 +75,8 @@ namespace VaccineChildren.Application.Services.Impl
                     StaffId = Guid.NewGuid(),
                     UserId = user.UserId,
                     RoleId = 2,
-                    Dob = staffReq.Dob,  
-                    Gender = staffReq.Gender,  
+                    Dob = staffReq.Dob,
+                    Gender = staffReq.Gender,
                     BloodType = staffReq.BloodType,
                     Status = StaticEnum.StatusEnum.Active.ToString(),
                     CreatedAt = DateTime.UtcNow.ToLocalTime(),
@@ -209,7 +209,16 @@ namespace VaccineChildren.Application.Services.Impl
                     throw new KeyNotFoundException("Staff not found");
                 }
 
-                return _mapper.Map<StaffRes>(staff);
+                var staffRes = _mapper.Map<StaffRes>(staff);
+
+                // Lấy Username & Password từ User
+                if (staff.User != null)
+                {
+                    staffRes.Username = staff.User.UserName;
+                    staffRes.Password = staff.User.Password; // Nếu cần giải mã, gọi _rsaService.Decrypt()
+                }
+
+                return staffRes;
             }
             catch (Exception e)
             {
@@ -222,6 +231,7 @@ namespace VaccineChildren.Application.Services.Impl
             }
         }
 
+
         public async Task<List<StaffRes>> GetAllStaff()
         {
             try
@@ -229,12 +239,12 @@ namespace VaccineChildren.Application.Services.Impl
                 _logger.LogInformation("Retrieving all staff, including inactive staff");
                 var staffRepository = _unitOfWork.GetRepository<Staff>();
                 var staffList = await staffRepository.Entities
-                    .Include(s => s.User)
-                    .Include(s => s.Role)
-                    .Where(s => s.Role.RoleName == StaticEnum.RoleEnum.Staff.ToString().ToLower())
-                    .OrderByDescending(s => s.Status == StaticEnum.StatusEnum.Active.ToString().ToLower())
-                    .ThenBy(s => s.Status)
-                    .ToListAsync();
+                            .Include(s => s.User)
+                            .Include(s => s.Role)
+                            .Where(s => s.Role.RoleName.ToLower() == StaticEnum.RoleEnum.Staff.ToString().ToLower())
+                            .OrderByDescending(s => s.Status.ToLower() == StaticEnum.StatusEnum.Active.ToString().ToLower())
+                            .ThenBy(s => s.Status)
+                            .ToListAsync();
 
                 if (!staffList.Any())
                 {
@@ -242,7 +252,19 @@ namespace VaccineChildren.Application.Services.Impl
                     return new List<StaffRes>();
                 }
 
-                return _mapper.Map<List<StaffRes>>(staffList);
+                var staffResList = _mapper.Map<List<StaffRes>>(staffList);
+
+                // Gán Username & Password
+                for (int i = 0; i < staffList.Count; i++)
+                {
+                    if (staffList[i].User != null)
+                    {
+                        staffResList[i].Username = staffList[i].User.UserName;
+                        staffResList[i].Password = staffList[i].User.Password; // Nếu cần giải mã, gọi _rsaService.Decrypt()
+                    }
+                }
+
+                return staffResList;
             }
             catch (Exception e)
             {
