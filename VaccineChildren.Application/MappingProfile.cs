@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Globalization;
+using AutoMapper;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Core.Store;
@@ -26,5 +27,9 @@ public class MappingProfile : Profile
         CreateMap<Vaccine, VaccineRes>();
         CreateMap<ManufacturerReq, Manufacturer>();
         CreateMap<Manufacturer, ManufacturerRes>();
+
+        CreateMap<CreateAppointmentReq, Child>();
+
+
     }
 }

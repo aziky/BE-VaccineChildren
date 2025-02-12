@@ -63,9 +63,10 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         return await _dbSet.FindAsync(id);
     }
 
-    public async Task InsertAsync(T entity)
+    public async Task<T> InsertAsync(T entity)
     {
         await _dbSet.AddAsync(entity);
+        return entity;
     }
 
     public Task UpdateAsync(T entity)
