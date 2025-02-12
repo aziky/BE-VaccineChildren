@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using VaccineChildren.Application.DTOs.Request;
@@ -20,10 +21,10 @@ public class UserService : IUserService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly string _jwtSecret;
-    private readonly RsaService _rsaService;
+    private readonly IRsaService _rsaService;
     private readonly ICacheService _cacheService;
 
-    public UserService(ILogger<IUserService> logger, IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, RsaService rsaService, ICacheService cacheService)
+    public UserService(ILogger<IUserService> logger, IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IRsaService rsaService, ICacheService cacheService)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
@@ -155,7 +156,7 @@ public class UserService : IUserService
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_jwtSecret);
-
+    
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(new[]
@@ -166,8 +167,13 @@ public class UserService : IUserService
             Expires = DateTime.UtcNow.AddHours(1),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
-
+    
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
     }
+    // private string GenerateJwtToken(User user)
+    // {
+    //     return _rsaService.GenerateJwtToken(user.UserId.ToString(), user.Role?.RoleName ?? "User");
+    // }
+
 }

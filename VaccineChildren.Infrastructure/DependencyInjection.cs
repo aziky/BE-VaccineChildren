@@ -7,6 +7,7 @@ using VaccineChildren.Domain.Abstraction;
 using VaccineChildren.Infrastructure.Configuration;
 using VaccineChildren.Infrastructure.Implementation;
 using VaccineChildren.Application.Services;
+using VaccineChildren.Application.Services.Impl;
 
 namespace VaccineChildren.Infrastructure;
 
@@ -29,6 +30,7 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ICacheService, RedisCacheService>();
+        services.AddScoped<IRsaService, RsaService>();
     }
 
     private static void AddDatabase(this IServiceCollection services, DatabaseConnection databaseSettings)
