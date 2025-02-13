@@ -23,7 +23,16 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.User.Address))
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName));
         CreateMap<VaccineReq, Vaccine>();
-        CreateMap<Vaccine, VaccineRes>();
+        // CreateMap<Vaccine, VaccineRes>();
+        CreateMap<Vaccine, VaccineRes>()
+            .ForMember(dest => dest.Description, opt => opt.Ignore()) // Bỏ qua ánh xạ tự động
+            .AfterMap((src, dest) =>
+            {
+                if (!string.IsNullOrEmpty(src.Description))
+                {
+                    dest.Description = System.Text.Json.JsonSerializer.Deserialize<DTOs.Response.DescriptionDetail>(src.Description);
+                }
+            });
         CreateMap<ManufacturerReq, Manufacturer>();
         CreateMap<Manufacturer, ManufacturerRes>();
     }
