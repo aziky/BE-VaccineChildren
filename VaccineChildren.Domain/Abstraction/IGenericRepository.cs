@@ -22,5 +22,4 @@ public interface IGenericRepository<T> where T : class
     Task InsertRangeAsync(IEnumerable<T> entities);
     Task<T?> FindAsync(Expression<Func<T, bool>> predicate, string? includeProperties = null);
     Task<IList<T>> GetAllAsync(string? includeProperties = null);
-    
 }

@@ -26,6 +26,7 @@ public class MappingProfile : Profile
         CreateMap<VaccineReq, Vaccine>();
         // CreateMap<Vaccine, VaccineRes>();
         CreateMap<Vaccine, VaccineRes>()
+            .ForMember(dest => dest.Manufacturer, opt => opt.MapFrom(src => src.VaccineManufacture.Manufacturer))
             .ForMember(dest => dest.Description, opt => opt.Ignore()) // Bỏ qua ánh xạ tự động
             .AfterMap((src, dest) =>
             {
