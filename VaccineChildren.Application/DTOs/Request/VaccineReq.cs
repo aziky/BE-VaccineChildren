@@ -1,9 +1,11 @@
+using VaccineChildren.Application.DTOs.Response;
+
 namespace VaccineChildren.Application.DTOs.Request;
 public class VaccineReq
 {
     public string? VaccineName { get; set; }
 
-    public string? Description { get; set; }
+    public DescriptionDetail? Description { get; set; }
 
     public int? MinAge { get; set; }
 
@@ -23,3 +25,10 @@ public class VaccineReq
     public bool? IsActive { get; set; }
     
 }
+// public class DescriptionDetail
+// {
+//     public string Info { get; set; }
+//     public string TargetedPatient { get; set; }
+//     public string InjectionSchedule { get; set; }
+//     public string VaccineReaction { get; set; }
+// }

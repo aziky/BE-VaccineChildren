@@ -16,10 +16,10 @@ namespace VaccineChildren.Application.Services.Impl
         private readonly ILogger<IStaffService> _logger;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly RsaService _rsaService;
+        private readonly IRsaService _rsaService;
 
         private readonly IGenericRepository<User> _userRepository;
-        public StaffService(ILogger<IStaffService> logger, IUnitOfWork unitOfWork, IMapper mapper, RsaService rsaService)
+        public StaffService(ILogger<IStaffService> logger, IUnitOfWork unitOfWork, IMapper mapper, IRsaService rsaService)
         {
             _logger = logger;
             _unitOfWork = unitOfWork;

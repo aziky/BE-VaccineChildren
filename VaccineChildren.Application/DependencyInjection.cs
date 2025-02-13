@@ -10,7 +10,6 @@ public static class DependencyInjection
     {
         services.AddAutoMapper(typeof(MappingProfile));
         services.AddScoped<IUserService, UserService>();
-        services.AddSingleton<RsaService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IStaffService, StaffService>();
         services.AddScoped<IVaccineService, VaccineService>();
