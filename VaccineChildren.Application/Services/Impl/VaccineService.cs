@@ -52,7 +52,6 @@ namespace VaccineChildren.Application.Services.Impl
                 {
                     VaccineId = Guid.NewGuid(),
                     VaccineName = vaccineReq.VaccineName,
-                    Description = vaccineReq.Description,
                     MinAge = vaccineReq.MinAge,
                     MaxAge = vaccineReq.MaxAge,
                     IsActive = true,
@@ -62,7 +61,7 @@ namespace VaccineChildren.Application.Services.Impl
                     Image = vaccineReq.Image,
                     CreatedAt = DateTime.UtcNow.ToLocalTime(),
                 };
-
+                vaccine.Description = System.Text.Json.JsonSerializer.Serialize(vaccineReq.Description);
                 // Create VaccineManufacture and assign it to Vaccine
                 var vaccineManufacture = new VaccineManufacture
                 {
@@ -106,6 +105,8 @@ namespace VaccineChildren.Application.Services.Impl
                 var price = vaccine.VaccineManufacture?.Price ?? 0;
 
                 var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
+                vaccineRes.Description = System.Text.Json.JsonSerializer.Deserialize<DTOs.Response.DescriptionDetail>(vaccine.Description);
+
                 vaccineRes.ManufacturerName = manufacturerName;
                 vaccineRes.Price = price;
 
@@ -142,6 +143,7 @@ namespace VaccineChildren.Application.Services.Impl
                     var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
                     vaccineRes.ManufacturerName = manufacturerName;
                     vaccineRes.Price = price;
+                    vaccineRes.Description = System.Text.Json.JsonSerializer.Deserialize<DTOs.Response.DescriptionDetail>(vaccine.Description);
 
                     vaccineResList.Add(vaccineRes);
                 }
@@ -177,7 +179,7 @@ namespace VaccineChildren.Application.Services.Impl
 
                 // Update vaccine properties
                 vaccine.VaccineName = vaccineReq.VaccineName;
-                vaccine.Description = vaccineReq.Description;
+                vaccine.Description = System.Text.Json.JsonSerializer.Serialize(vaccineReq.Description);
                 vaccine.MinAge = vaccineReq.MinAge;
                 vaccine.MaxAge = vaccineReq.MaxAge;
                 vaccine.IsActive = vaccineReq.IsActive;

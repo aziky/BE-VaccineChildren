@@ -35,4 +35,11 @@ public static class StaticEnum
         [CustomName("failed")] Failed
     }
     
+    public enum OrderStatusEnum
+    {
+        [CustomName("processing")] Processing,
+        [CustomName("completed")] Completed,
+        [CustomName("cancelled")] Cancelled,
+    }
+    
 }

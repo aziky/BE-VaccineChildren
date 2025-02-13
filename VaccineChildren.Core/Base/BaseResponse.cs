@@ -46,6 +46,11 @@ public class BaseResponse<T>
     {
         return new BaseResponse<T>(StatusCodeHelper.OK, StatusCodeHelper.OK.Name(), mess);
     }
+    
+    public static BaseResponse<T> CreateResponse(string? mess)
+    {
+        return new BaseResponse<T>(StatusCodeHelper.Created, StatusCodeHelper.Created.Name(), mess);
+    }
 
     public static BaseResponse<T> UnauthorizedResponse(string mess)
     {

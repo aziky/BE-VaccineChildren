@@ -3,6 +3,7 @@
 public enum StatusCodeHelper
 {
 	[CustomName("Success")] OK = 200,
+	[CustomName("Created")] Created = 201,
 
 	[CustomName("Bad Request")] BadRequest = 400,
 
