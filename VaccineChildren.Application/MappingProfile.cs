@@ -26,5 +26,7 @@ public class MappingProfile : Profile
         CreateMap<Vaccine, VaccineRes>();
         CreateMap<ManufacturerReq, Manufacturer>();
         CreateMap<Manufacturer, ManufacturerRes>();
+        CreateMap<PackageReq, Package>();
+        CreateMap<Package, PackageRes>();
     }
 }

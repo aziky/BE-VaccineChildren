@@ -1,4 +1,6 @@
 namespace VaccineChildren.Application.DTOs.Response;
+
+using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Domain.Entities;
 
 public class VaccineRes
@@ -23,5 +25,5 @@ public class VaccineRes
 
     public string ManufacturerName { get; set; }
     public decimal Price { get; set; }
-    
+
 }

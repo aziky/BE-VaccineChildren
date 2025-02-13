@@ -7,6 +7,7 @@ using VaccineChildren.Domain.Abstraction;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VaccineChildren.Core.Exceptions;
 
 namespace VaccineChildren.Application.Services.Impl
 {
@@ -32,13 +33,18 @@ namespace VaccineChildren.Application.Services.Impl
             try
             {
                 _logger.LogInformation("Start creating vaccine");
+                if (vaccineReq.MinAge > vaccineReq.MaxAge)
+                {
+                    throw new CustomExceptions.ValidationException("MinAge cannot be greater than MaxAge.");
+                }
+
+                
 
                 // Ensure ManufacturerId is valid
                 var manufacturer = await _unitOfWork.GetRepository<Manufacturer>().GetByIdAsync(Guid.Parse(vaccineReq.ManufacturerId));
                 if (manufacturer == null)
                 {
-                    _logger.LogError("Manufacturer not found with ID: {ManufacturerId}", vaccineReq.ManufacturerId);
-                    throw new KeyNotFoundException("Manufacturer not found");
+                    throw new CustomExceptions.EntityNotFoundException("Manufacturer", vaccineReq.ManufacturerId);
                 }
 
                 // Create new Vaccine entity
@@ -156,6 +162,10 @@ namespace VaccineChildren.Application.Services.Impl
             try
             {
                 _logger.LogInformation("Start updating vaccine with ID: {VaccineId}", vaccineId);
+                if (vaccineReq.MinAge > vaccineReq.MaxAge)
+                {
+                    throw new CustomExceptions.ValidationException("MinAge cannot be greater than MaxAge.");
+                }
 
                 var vaccine = await _vaccineRepository.GetByIdAsync(vaccineId);
 

@@ -149,7 +149,7 @@ public class DashboardService : IDashboardService
 
             var vaccineOrderedList = await orderRepository.GetAllAsync(query => query
                 .Include(o => o.Vaccines)
-                .Include(o => o.Packages).ThenInclude(p => p.Services)
+                .Include(o => o.Packages).ThenInclude(p => p.Vaccines)
             );
             
             _logger.LogInformation($"{nameof(DashboardService)} - Get data successfully from dashboard summary");
@@ -158,7 +158,7 @@ public class DashboardService : IDashboardService
                 .SelectMany(o =>
                     o.Vaccines
                         .Select(vm => vm.Vaccine)
-                        .Concat(o.Packages.SelectMany(p => p.Services)) 
+                        .Concat(o.Packages.SelectMany(p => p.Vaccines)) 
                         .Select(v => new VaccineData.VaccineDetails
                         {
                             VaccineId = v.VaccineId.ToString(),
@@ -167,7 +167,7 @@ public class DashboardService : IDashboardService
                 )
                 .GroupBy(v => vaccineOrderedList.Count(o =>
                     o.Vaccines.Any(vm => vm.Vaccine.VaccineId.ToString() == v.VaccineId) || 
-                    o.Packages.Any(p => p.Services.Any(s => s.VaccineId.ToString() == v.VaccineId))
+                    o.Packages.Any(p => p.Vaccines.Any(s => s.VaccineId.ToString() == v.VaccineId))
                 ))
                 .Where(g => g.Key > 0)
                 .Select(g => new VaccineData

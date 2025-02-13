@@ -9,7 +9,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
 {
     private readonly VaccineSystemDbContext _context;
     private readonly DbSet<T> _dbSet;
-    
+
     public GenericRepository(VaccineSystemDbContext context)
     {
         _context = context;
@@ -77,11 +77,51 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         T entity = await _dbSet.FindAsync(id) ?? throw new KeyNotFoundException();
         _dbSet.Remove(entity);
-        
+
     }
 
     public async Task SaveAsync()
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<T?> FindAsync(Expression<Func<T, bool>> predicate, string? includeProperties = null)
+    {
+        IQueryable<T> query = _dbSet;
+
+        if (!string.IsNullOrEmpty(includeProperties))
+        {
+            foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                query = query.Include(includeProperty.Trim());
+            }
+        }
+
+        return await query.FirstOrDefaultAsync(predicate);
+    }
+
+    public async Task<IList<T>> GetAllAsync(string? includeProperties = null)
+    {
+        IQueryable<T> query = _dbSet;
+
+        if (!string.IsNullOrEmpty(includeProperties))
+        {
+            foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                query = query.Include(includeProperty.Trim());
+            }
+        }
+
+        return await query.ToListAsync();
+    }
+
+    public async Task DeleteAsync(Expression<Func<T, bool>> predicate)
+{
+    var entities = await _dbSet.Where(predicate).ToListAsync();
+    if (entities.Any())
+    {
+        _dbSet.RemoveRange(entities);
+    }
+}
+
 }

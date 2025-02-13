@@ -13,6 +13,9 @@ public partial class Package
     public decimal? Discount { get; set; }
 
     public bool? IsActive { get; set; }
+    public int? MinAge { get; set; }
+    public int? MaxAge { get; set; }
+    public string? Unit { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
@@ -26,5 +29,7 @@ public partial class Package
 
     public virtual ICollection<UserCart> UserCarts { get; set; } = new List<UserCart>();
     
-    public virtual ICollection<Vaccine> Services { get; set; } = new List<Vaccine>();
+    public virtual ICollection<Vaccine> Vaccines { get; set; } = new List<Vaccine>();
+    public virtual ICollection<PackageVaccine> PackageVaccines { get; set; } = new List<PackageVaccine>();
+
 }

@@ -33,4 +33,6 @@ public partial class Vaccine
     public virtual VaccineManufacture? VaccineManufacture { get; set; }
 
     public virtual ICollection<Package> Packages { get; set; } = new List<Package>();
+    public virtual ICollection<PackageVaccine> PackageVaccines { get; set; } = new List<PackageVaccine>();
+
 }
