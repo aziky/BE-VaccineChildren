@@ -384,21 +384,21 @@ public partial class VaccineSystemDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
 
-            entity.HasMany(d => d.Services).WithMany(p => p.Packages)
+            entity.HasMany(d => d.Vaccines).WithMany(p => p.Packages)
                 .UsingEntity<Dictionary<string, object>>(
                     "PackageVaccine",
                     r => r.HasOne<Vaccine>().WithMany()
-                        .HasForeignKey("ServiceId")
-                        .HasConstraintName("package_vaccine_service_id_fkey"),
+                        .HasForeignKey("VaccineId")
+                        .HasConstraintName("package_vaccine_vaccine_id_fkey"),
                     l => l.HasOne<Package>().WithMany()
                         .HasForeignKey("PackageId")
                         .HasConstraintName("package_vaccine_package_id_fkey"),
                     j =>
                     {
-                        j.HasKey("PackageId", "ServiceId").HasName("package_vaccine_pkey");
+                        j.HasKey("PackageId", "VaccineId").HasName("package_vaccine_pkey");
                         j.ToTable("package_vaccine");
                         j.IndexerProperty<Guid>("PackageId").HasColumnName("package_id");
-                        j.IndexerProperty<Guid>("ServiceId").HasColumnName("service_id");
+                        j.IndexerProperty<Guid>("VaccineId").HasColumnName("vaccine_id");
                     });
         });
 
@@ -560,8 +560,8 @@ public partial class VaccineSystemDbContext : DbContext
             entity.HasOne(d => d.Role).WithMany(p => p.Staff)
                 .HasForeignKey(d => d.RoleId)
                 .HasConstraintName("staff_role_id_fkey");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            // entity.Property(e => e.UserId).HasColumnName("user_id");
+            // entity.Property(e => e.RoleId).HasColumnName("role_id");    
             entity.Property(e => e.Status)
                 .HasColumnType("text") 
                 .HasColumnName("status");

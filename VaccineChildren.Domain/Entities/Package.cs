@@ -26,5 +26,5 @@ public partial class Package
 
     public virtual ICollection<UserCart> UserCarts { get; set; } = new List<UserCart>();
     
-    public virtual ICollection<Vaccine> Services { get; set; } = new List<Vaccine>();
+    public virtual ICollection<Vaccine> Vaccines { get; set; } = new List<Vaccine>();
 }
