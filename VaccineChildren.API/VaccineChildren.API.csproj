@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>VaccineChildren.API</RootNamespace>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
@@ -23,6 +24,12 @@
       <ProjectReference Include="..\VaccineChildren.Core\VaccineChildren.Core.csproj" />
       <ProjectReference Include="..\VaccineChildren.Domain\VaccineChildren.Domain.csproj" />
       <ProjectReference Include="..\VaccineChildren.Infrastructure\VaccineChildren.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
     </ItemGroup>
 
 </Project>
