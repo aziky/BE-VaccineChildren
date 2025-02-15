@@ -81,10 +81,13 @@ namespace VaccineChildren.Application.Services.Impl
             {
                 _logger.LogInformation("Retrieving all manufacturers");
 
-                var manufacturers = await _manufacturerRepository.GetAllAsync();
+                // Retrieve all manufacturers asynchronously
+                var manufacturers = await _manufacturerRepository.GetAllAsync(query => query
+                    .Where(m => m.IsActive == true));
+
                 if (manufacturers == null || manufacturers.Count == 0)
                 {
-                    _logger.LogInformation("No manufacturers found");
+                    _logger.LogInformation("No active manufacturers found");
                     return new List<ManufacturerRes>();
                 }
 
@@ -116,7 +119,7 @@ namespace VaccineChildren.Application.Services.Impl
                 manufacturer.Description = manufacturerReq.Description;
                 manufacturer.CountryName = manufacturerReq.CountryName;
                 manufacturer.CountryCode = manufacturerReq.CountryCode;
-                manufacturer.IsActive = manufacturerReq.IsActive;   
+                manufacturer.IsActive = manufacturerReq.IsActive;
                 manufacturer.UpdatedAt = DateTime.Now;
 
                 await _manufacturerRepository.UpdateAsync(manufacturer);

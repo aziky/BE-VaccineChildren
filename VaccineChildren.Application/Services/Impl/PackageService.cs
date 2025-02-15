@@ -90,8 +90,17 @@ public class PackageService : IPackageService
         try
         {
             _logger.LogInformation("Retrieving all packages");
-            var packages = await _packageRepository.GetAllAsync("PackageVaccines.Vaccine.VaccineManufacture.Manufacturer");
-            return _mapper.Map<List<PackageRes>>(packages);
+
+            // Retrieve all packages asynchronously
+            var packages = await _packageRepository.GetAllAsync(
+                "PackageVaccines.Vaccine.VaccineManufacture.Manufacturer");
+
+            // Filter for IsActive = true using LINQ on the retrieved list
+            var activePackages = packages
+                .Where(p => p.PackageVaccines.Any(pv => pv.Vaccine.VaccineManufacture.Manufacturer.IsActive == true))
+                .ToList();
+
+            return _mapper.Map<List<PackageRes>>(activePackages);
         }
         catch (Exception ex)
         {
@@ -99,6 +108,7 @@ public class PackageService : IPackageService
             throw;
         }
     }
+
 
     public async Task UpdatePackage(Guid packageId, PackageReq packageReq)
     {
