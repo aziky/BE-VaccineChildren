@@ -409,18 +409,18 @@ public partial class VaccineSystemDbContext : DbContext
                     });
         });
 
-                    modelBuilder.Entity<PackageVaccine>()
-                        .HasKey(pv => new { pv.PackageId, pv.VaccineId });
+        modelBuilder.Entity<PackageVaccine>()
+            .HasKey(pv => new { pv.PackageId, pv.VaccineId });
 
-                    modelBuilder.Entity<PackageVaccine>()
-                        .HasOne(pv => pv.Package)
-                        .WithMany(p => p.PackageVaccines)
-                        .HasForeignKey(pv => pv.PackageId);
+        modelBuilder.Entity<PackageVaccine>()
+            .HasOne(pv => pv.Package)
+            .WithMany(p => p.PackageVaccines)
+            .HasForeignKey(pv => pv.PackageId);
 
-                    modelBuilder.Entity<PackageVaccine>()
-                        .HasOne(pv => pv.Vaccine)
-                        .WithMany(v => v.PackageVaccines)
-                        .HasForeignKey(pv => pv.VaccineId);
+        modelBuilder.Entity<PackageVaccine>()
+            .HasOne(pv => pv.Vaccine)
+            .WithMany(v => v.PackageVaccines)
+            .HasForeignKey(pv => pv.VaccineId);
 
 
 
@@ -568,7 +568,6 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.Gender)
                 .HasMaxLength(50)
                 .HasColumnName("gender");
-            entity.Property(e => e.RoleId).HasColumnName("role_id");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasColumnName("status");
@@ -578,12 +577,10 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
-
-            entity.HasOne(d => d.Role).WithMany(p => p.Staff)
-                .HasForeignKey(d => d.RoleId)
-                .HasConstraintName("staff_role_id_fkey");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.HasOne(s => s.User) 
+                .WithOne(u => u.Staff)
+                .HasForeignKey<Staff>(s => s.StaffId) 
+                .OnDelete(DeleteBehavior.Cascade);
             entity.Property(e => e.Status)
                 .HasColumnType("text")
                 .HasColumnName("status");
@@ -732,22 +729,23 @@ public partial class VaccineSystemDbContext : DbContext
 
             entity.ToTable("vaccine_manufactures");
 
-            entity.HasIndex(e => e.VaccineId, "vaccine_manufactures_vaccine_id_key").IsUnique();
-
             entity.Property(e => e.ManufacturerId).HasColumnName("manufacturer_id");
             entity.Property(e => e.VaccineId).HasColumnName("vaccine_id");
             entity.Property(e => e.Price)
                 .HasPrecision(10, 2)
                 .HasColumnName("price");
 
-            entity.HasOne(d => d.Manufacturer).WithMany(p => p.VaccineManufactures)
+            entity.HasOne(d => d.Manufacturer)
+                .WithMany(p => p.VaccineManufactures)
                 .HasForeignKey(d => d.ManufacturerId)
                 .HasConstraintName("vaccine_manufactures_manufacturer_id_fkey");
 
-            entity.HasOne(d => d.Vaccine).WithOne(p => p.VaccineManufacture)
-                .HasForeignKey<VaccineManufacture>(d => d.VaccineId)
+            entity.HasOne(vm => vm.Vaccine)
+                .WithMany(v => v.VaccineManufactures)  
+                .HasForeignKey(vm => vm.VaccineId)
                 .HasConstraintName("vaccine_manufactures_vaccine_id_fkey");
         });
+
 
         modelBuilder.Entity<VaccineReaction>(entity =>
         {

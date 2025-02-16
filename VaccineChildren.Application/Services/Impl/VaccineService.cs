@@ -72,7 +72,7 @@ namespace VaccineChildren.Application.Services.Impl
                 };
 
                 // Assign the VaccineManufacture to Vaccine
-                vaccine.VaccineManufacture = vaccineManufacture;
+                vaccine.VaccineManufactures.Add(vaccineManufacture);
 
                 // Insert Vaccine and related VaccineManufacture into database
                 await _vaccineRepository.InsertAsync(vaccine);
@@ -101,8 +101,9 @@ namespace VaccineChildren.Application.Services.Impl
                     throw new KeyNotFoundException("Vaccine not found");
                 }
 
-                var manufacturer = vaccine.VaccineManufacture?.Manufacturer;
-                var price = vaccine.VaccineManufacture?.Price ?? 0;
+                var firstVaccineManufacture = vaccine.VaccineManufactures?.FirstOrDefault();
+                var manufacturer = firstVaccineManufacture?.Manufacturer;
+                var price = firstVaccineManufacture?.Price ?? 0;
 
                 var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
                 vaccineRes.Description = System.Text.Json.JsonSerializer.Deserialize<DTOs.Response.DescriptionDetail>(vaccine.Description);
@@ -150,8 +151,9 @@ namespace VaccineChildren.Application.Services.Impl
 
                 var vaccineResList = vaccines.Select(vaccine =>
                 {
-                    var manufacturer = vaccine.VaccineManufacture?.Manufacturer;
-                    var price = vaccine.VaccineManufacture?.Price ?? 0;
+                    var firstVaccineManufacture = vaccine.VaccineManufactures?.FirstOrDefault();
+                    var manufacturer = firstVaccineManufacture?.Manufacturer;
+                    var price = firstVaccineManufacture?.Price ?? 0;
 
                     var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
                     vaccineRes.Description = System.Text.Json.JsonSerializer.Deserialize<DTOs.Response.DescriptionDetail>(vaccine.Description);
@@ -226,19 +228,29 @@ namespace VaccineChildren.Application.Services.Impl
                 }
 
                 // Update the VaccineManufacture for the vaccine
-                if (vaccine.VaccineManufacture == null)
+                if (vaccine.VaccineManufactures == null)
                 {
-                    vaccine.VaccineManufacture = new VaccineManufacture
+                    vaccine.VaccineManufactures = new List<VaccineManufacture>(); // Khởi tạo danh sách nếu null
+                }
+
+// Kiểm tra xem vaccine đã có VaccineManufacture từ nhà sản xuất này chưa
+                var existingVaccineManufacture = vaccine.VaccineManufactures
+                    .FirstOrDefault(vm => vm.ManufacturerId == manufacturer.ManufacturerId);
+
+                if (existingVaccineManufacture == null)
+                {
+                    // Thêm mới VaccineManufacture vào danh sách
+                    vaccine.VaccineManufactures.Add(new VaccineManufacture
                     {
                         ManufacturerId = manufacturer.ManufacturerId,
                         VaccineId = vaccine.VaccineId,
                         Price = vaccineReq.Price
-                    };
+                    });
                 }
                 else
                 {
-                    vaccine.VaccineManufacture.Price = vaccineReq.Price;
-                    vaccine.VaccineManufacture.ManufacturerId = manufacturer.ManufacturerId;
+                    // Cập nhật giá cho VaccineManufacture đã tồn tại
+                    existingVaccineManufacture.Price = vaccineReq.Price;
                 }
 
                 vaccine.UpdatedAt = DateTime.UtcNow.ToLocalTime();
@@ -290,9 +302,10 @@ namespace VaccineChildren.Application.Services.Impl
             _logger.LogInformation("Retrieving vaccines for age range: {MinAge}-{MaxAge} {Unit}", minAge, maxAge, unit);
 
             var vaccines = await _vaccineRepository.GetAllAsync(q => q
-                .Include(v => v.VaccineManufacture.Manufacturer)
-                .Where(v => v.MinAge <= maxAge && v.MaxAge >= minAge)
-            );
+                .Include(v => v.VaccineManufactures) 
+                .ThenInclude(vm => vm.Manufacturer) 
+                .Where(v => v.MinAge <= maxAge && v.MaxAge >= minAge));
+
 
             vaccines = vaccines.Where(v => v.Unit.Equals(unit, StringComparison.OrdinalIgnoreCase)).ToList();
 
@@ -304,8 +317,9 @@ namespace VaccineChildren.Application.Services.Impl
 
             var vaccineResList = vaccines.Select(vaccine =>
             {
-                var manufacturer = vaccine.VaccineManufacture?.Manufacturer;
-                var price = vaccine.VaccineManufacture?.Price ?? 0;
+                var firstVaccineManufacture = vaccine.VaccineManufactures?.FirstOrDefault();
+                var manufacturer = firstVaccineManufacture?.Manufacturer;
+                var price = firstVaccineManufacture?.Price ?? 0;
 
                 var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
                 vaccineRes.Description = System.Text.Json.JsonSerializer.Deserialize<DTOs.Response.DescriptionDetail>(vaccine.Description);

@@ -38,6 +38,24 @@ public class PackageService : IPackageService
             package.PackageId = Guid.NewGuid();
             package.CreatedAt = DateTime.UtcNow;
             package.IsActive = true;
+
+            decimal totalVaccinePrice = 0;
+            if (packageReq.VaccineIds != null && packageReq.VaccineIds.Any())
+            {
+                var allVaccines = await _vaccineRepository.GetAllAsync();
+                var vaccines = allVaccines.Where(v => packageReq.VaccineIds.Contains(v.VaccineId)).ToList();
+                
+                totalVaccinePrice = vaccines
+                    .SelectMany(v => v.VaccineManufactures)  
+                    .Sum(vm => vm.Price ?? 0);
+            }
+
+
+
+
+            // Tính giá package sau khi áp dụng discount
+            package.Price = totalVaccinePrice * (1-(packageReq.Discount/100));
+
             await _packageRepository.InsertAsync(package);
 
             if (packageReq.VaccineIds != null && packageReq.VaccineIds.Any())
@@ -47,11 +65,11 @@ public class PackageService : IPackageService
                     PackageId = package.PackageId,
                     VaccineId = vaccineId
                 }).ToList();
+
                 foreach (var packageVaccine in packageVaccines)
                 {
                     await _packageVaccineRepository.InsertAsync(packageVaccine);
                 }
-
             }
 
             await _unitOfWork.SaveChangeAsync();
@@ -93,12 +111,17 @@ public class PackageService : IPackageService
 
             // Retrieve all packages asynchronously
             var packages = await _packageRepository.GetAllAsync(
-                "PackageVaccines.Vaccine.VaccineManufacture.Manufacturer");
+                "PackageVaccines.Vaccine.VaccineManufactures.Manufacturer"
+            );
+
 
             // Filter for IsActive = true using LINQ on the retrieved list
             var activePackages = packages
-                .Where(p => p.PackageVaccines.Any(pv => pv.Vaccine.VaccineManufacture.Manufacturer.IsActive == true))
+                .Where(p => p.PackageVaccines
+                    .Any(pv => pv.Vaccine.VaccineManufactures
+                        .Any(vm => vm.Manufacturer.IsActive == true)))
                 .ToList();
+
 
             return _mapper.Map<List<PackageRes>>(activePackages);
         }

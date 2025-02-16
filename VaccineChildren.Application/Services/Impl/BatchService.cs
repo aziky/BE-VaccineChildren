@@ -33,14 +33,12 @@ public class BatchService : IBatchService
         {
             _logger.LogInformation("Start creating batch");
 
-            // Ensure VaccineId is valid
             var vaccine = await _unitOfWork.GetRepository<Vaccine>().GetByIdAsync(batchReq.VaccineId ?? Guid.Empty);
             if (vaccine == null)
             {
                 throw new CustomExceptions.EntityNotFoundException("Vaccine", batchReq.VaccineId);
             }
 
-            // Create new Batch entity
             var batch = new Batch
             {
                 BatchId = Guid.NewGuid(),
@@ -51,7 +49,6 @@ public class BatchService : IBatchService
                 IsActive = batchReq.IsActive ?? true
             };
 
-            // Insert Batch into the database
             await _batchRepository.InsertAsync(batch);
             await _unitOfWork.SaveChangeAsync();
 
@@ -65,7 +62,6 @@ public class BatchService : IBatchService
     }
 
 
-    // Get a batch by ID
     public async Task<BatchRes> GetBatchById(Guid batchId)
     {
         try
@@ -79,7 +75,6 @@ public class BatchService : IBatchService
                 throw new KeyNotFoundException("Batch not found");
             }
 
-            // Retrieve the related Vaccine using the VaccineId from the Batch
             var vaccine = await _unitOfWork.GetRepository<Vaccine>().GetByIdAsync(batch.VaccineId);
             if (vaccine == null)
             {
@@ -87,10 +82,8 @@ public class BatchService : IBatchService
                 throw new KeyNotFoundException("Vaccine associated with batch not found");
             }
 
-            // Map Batch entity to BatchRes DTO
             var batchRes = _mapper.Map<BatchRes>(batch);
 
-            // Include the related Vaccine entity in the response
             batchRes.Vaccine = vaccine;
 
             return batchRes;
@@ -103,7 +96,6 @@ public class BatchService : IBatchService
     }
 
 
-    // Get all batches
     public async Task<List<BatchRes>> GetAllBatchs()
     {
         try
@@ -122,21 +114,17 @@ public class BatchService : IBatchService
 
             foreach (var batch in batches)
             {
-                // Retrieve the related Vaccine for each batch
                 var vaccine = await _unitOfWork.GetRepository<Vaccine>().GetByIdAsync(batch.VaccineId);
                 if (vaccine == null)
                 {
                     _logger.LogInformation("Vaccine associated with batch {BatchId} not found.", batch.BatchId);
-                    continue; // Skip this batch if associated vaccine is not found
+                    continue; 
                 }
 
-                // Map the Batch entity to BatchRes DTO
                 var batchRes = _mapper.Map<BatchRes>(batch);
 
-                // Include the associated Vaccine in the BatchRes response
                 batchRes.Vaccine = vaccine;
 
-                // Add the populated BatchRes object to the list
                 batchResList.Add(batchRes);
             }
 

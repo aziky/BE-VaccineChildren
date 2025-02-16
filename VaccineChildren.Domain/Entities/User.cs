@@ -1,7 +1,10 @@
-﻿namespace VaccineChildren.Domain.Entities;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace VaccineChildren.Domain.Entities;
 
 public partial class User
 {
+    [Key]
     public Guid UserId { get; set; } = Guid.NewGuid();
 
     public int? RoleId { get; set; }
@@ -35,4 +38,7 @@ public partial class User
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
     public virtual Role? Role { get; set; }
+
+    
+    public virtual Staff? Staff { get; set; } 
 }

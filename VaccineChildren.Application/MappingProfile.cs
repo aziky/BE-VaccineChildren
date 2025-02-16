@@ -21,12 +21,11 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.User.FullName))
             .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.User.Phone))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email))
-            .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.User.Address))
-            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName));
+            .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.User.Address));
         CreateMap<VaccineReq, Vaccine>();
         // CreateMap<Vaccine, VaccineRes>();
         CreateMap<Vaccine, VaccineRes>()
-            .ForMember(dest => dest.Manufacturer, opt => opt.MapFrom(src => src.VaccineManufacture.Manufacturer))
+            // .ForMember(dest => dest.Manufacturer, opt => opt.MapFrom(src => src.VaccineManufacture.Manufacturer))
             .ForMember(dest => dest.Description, opt => opt.Ignore()) // Bỏ qua ánh xạ tự động
             .AfterMap((src, dest) =>
             {
