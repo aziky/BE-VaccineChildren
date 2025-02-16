@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VaccineChildren.Infrastructure;
@@ -11,16 +12,15 @@ using VaccineChildren.Infrastructure;
 namespace VaccineChildren.Infrastructure.Migrations
 {
     [DbContext(typeof(VaccineSystemDbContext))]
-    partial class VaccineSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250216170425_InitialSync")]
+    partial class InitialSync
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "9.0.2")
-                .HasAnnotation("Proxies:ChangeTracking", false)
-                .HasAnnotation("Proxies:CheckEquality", false)
-                .HasAnnotation("Proxies:LazyLoading", true)
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -59,6 +59,24 @@ namespace VaccineChildren.Infrastructure.Migrations
                     b.HasIndex("VaccineId");
 
                     b.ToTable("order_vaccine", (string)null);
+                });
+
+            modelBuilder.Entity("PackageVaccine", b =>
+                {
+                    b.Property<Guid>("PackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("package_id");
+
+                    b.Property<Guid>("VaccineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("vaccine_id");
+
+                    b.HasKey("PackageId", "VaccineId")
+                        .HasName("package_vaccine_pkey");
+
+                    b.HasIndex("VaccineId");
+
+                    b.ToTable("package_vaccine", (string)null);
                 });
 
             modelBuilder.Entity("VaccineChildren.Domain.Entities.Batch", b =>
@@ -441,6 +459,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("package_id");
 
                     b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("CreatedBy")
@@ -472,6 +491,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("price");
 
                     b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
                         .HasColumnName("updated_at");
 
                     b.Property<string>("UpdatedBy")
@@ -684,6 +704,9 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("gender");
 
+                    b.Property<int>("RoleId")
+                        .HasColumnType("integer")
+                        .HasColumnName("role_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -700,10 +723,15 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("updated_by");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("StaffId")
                         .HasName("staff_pkey");
 
                     b.HasIndex("RoleId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("staff", (string)null);
                 });
@@ -1032,6 +1060,23 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasConstraintName("order_vaccine_vaccine_id_fkey");
                 });
 
+            modelBuilder.Entity("PackageVaccine", b =>
+                {
+                    b.HasOne("VaccineChildren.Domain.Entities.Package", null)
+                        .WithMany()
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("package_vaccine_package_id_fkey");
+
+                    b.HasOne("VaccineChildren.Domain.Entities.Vaccine", null)
+                        .WithMany()
+                        .HasForeignKey("VaccineId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("package_vaccine_vaccine_id_fkey");
+                });
+
             modelBuilder.Entity("VaccineChildren.Domain.Entities.Batch", b =>
                 {
                     b.HasOne("VaccineChildren.Domain.Entities.VaccineManufacture", "Vaccine")
@@ -1164,11 +1209,20 @@ namespace VaccineChildren.Infrastructure.Migrations
 
             modelBuilder.Entity("VaccineChildren.Domain.Entities.Staff", b =>
                 {
+                    b.HasOne("VaccineChildren.Domain.Entities.Role", "Role")
                         .WithMany("Staff")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("staff_role_id_fkey");
 
                     b.HasOne("VaccineChildren.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Role");
 
                     b.Navigation("User");
                 });
