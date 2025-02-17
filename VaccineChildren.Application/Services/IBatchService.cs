@@ -8,7 +8,7 @@ public interface IBatchService
 {
     Task CreateBatch(BatchReq batchReq);
     Task<BatchRes?> GetBatchById(Guid batchId);
-    Task<List<BatchRes>> GetAllBatchs();
+    Task<List<BatchRes>> GetAllBatches();
     Task UpdateBatch(Guid batchId, BatchReq batchReq);
     Task DeleteBatch(Guid batchId);
 }

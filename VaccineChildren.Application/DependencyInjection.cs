@@ -1,6 +1,9 @@
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Application.Services.Impl;
+using VaccineChildren.Domain.Abstraction;
+
 
 namespace VaccineChildren.Application;
 
@@ -16,5 +19,7 @@ public static class DependencyInjection
         services.AddScoped<IManufacturerService, ManufacturerService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IPackageService, PackageService>();
+        services.AddScoped<IBatchService, BatchService>();
+
     }
 }

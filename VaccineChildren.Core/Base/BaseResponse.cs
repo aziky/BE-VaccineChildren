@@ -71,4 +71,14 @@ public class BaseResponse<T>
     {
         return new BaseResponse<T>(StatusCodeHelper.ServerError, StatusCodeHelper.ServerError.Name(), mess);
     }
+
+    public static object ErrorResponse(string internalServerError, string exMessage)
+    {
+        return new
+        {
+            Status = "Error",
+            Message = internalServerError,
+            Details = exMessage
+        };
+    }
 }

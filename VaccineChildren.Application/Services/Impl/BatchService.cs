@@ -1,13 +1,10 @@
-using VaccineChildren.Application.DTOs.Request;
-using VaccineChildren.Application.DTOs.Response;
-using VaccineChildren.Domain.Entities;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Domain.Abstraction;
+using VaccineChildren.Domain.Entities;
 using VaccineChildren.Application.DTOs.Requests;
+using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Application.DTOs.Responses;
 using VaccineChildren.Core.Exceptions;
 
@@ -18,20 +15,20 @@ public class BatchService : IBatchService
     private readonly ILogger<BatchService> _logger;
     private readonly IGenericRepository<Batch> _batchRepository;
 
-    public BatchService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<BatchService> logger, IGenericRepository<Batch> batchRepository)
+    public BatchService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<BatchService> logger)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _logger = logger;
-        _batchRepository = batchRepository;
+        _batchRepository = _unitOfWork.GetRepository<Batch>();
     }
 
-    // Create a new batch
+    // 1. Create Batch
     public async Task CreateBatch(BatchReq batchReq)
     {
         try
         {
-            _logger.LogInformation("Start creating batch");
+            _logger.LogInformation("Creating new batch");
 
             var vaccine = await _unitOfWork.GetRepository<Vaccine>().GetByIdAsync(batchReq.VaccineId ?? Guid.Empty);
             if (vaccine == null)
@@ -61,7 +58,7 @@ public class BatchService : IBatchService
         }
     }
 
-
+    // 2. Get Batch By Id
     public async Task<BatchRes> GetBatchById(Guid batchId)
     {
         try
@@ -82,9 +79,11 @@ public class BatchService : IBatchService
                 throw new KeyNotFoundException("Vaccine associated with batch not found");
             }
 
+            // Map Batch to BatchRes
             var batchRes = _mapper.Map<BatchRes>(batch);
 
-            batchRes.Vaccine = vaccine;
+            // Use AutoMapper to map Vaccine to VaccineRes (inside the BatchRes)
+            batchRes.Vaccine = _mapper.Map<VaccineRes>(vaccine);
 
             return batchRes;
         }
@@ -95,15 +94,16 @@ public class BatchService : IBatchService
         }
     }
 
-
-    public async Task<List<BatchRes>> GetAllBatchs()
+    // 3. Get All Batches
+    public async Task<List<BatchRes>> GetAllBatches()
     {
         try
         {
-            _logger.LogInformation("Retrieving all batches.");
+            _logger.LogInformation("Retrieving all batches");
 
             var batches = await _batchRepository.GetAllAsync(query => query
                 .Where(b => b.IsActive == true));
+
             if (batches == null || batches.Count == 0)
             {
                 _logger.LogInformation("No batches found.");
@@ -118,12 +118,12 @@ public class BatchService : IBatchService
                 if (vaccine == null)
                 {
                     _logger.LogInformation("Vaccine associated with batch {BatchId} not found.", batch.BatchId);
-                    continue; 
+                    continue;
                 }
 
+                // Sử dụng AutoMapper để ánh xạ Vaccine thành VaccineRes
                 var batchRes = _mapper.Map<BatchRes>(batch);
-
-                batchRes.Vaccine = vaccine;
+                batchRes.Vaccine = _mapper.Map<VaccineRes>(vaccine);
 
                 batchResList.Add(batchRes);
             }
@@ -138,31 +138,28 @@ public class BatchService : IBatchService
     }
 
 
-    // Update a batch by ID
+    // 4. Update Batch
     public async Task UpdateBatch(Guid batchId, BatchReq batchReq)
     {
         try
         {
-            _logger.LogInformation("Start updating batch with ID: {BatchId}", batchId);
+            _logger.LogInformation("Updating batch with ID: {BatchId}", batchId);
 
-            // Retrieve the batch to update
             var batch = await _batchRepository.GetByIdAsync(batchId);
             if (batch == null)
             {
                 _logger.LogInformation("Batch not found with ID: {BatchId}", batchId);
-                throw new KeyNotFoundException($"Batch with ID {batchId} not found.");
+                throw new KeyNotFoundException("Batch not found");
             }
 
-            // Optionally: Validation for the batch data if needed, e.g., check if production date is valid
+            // Optionally: Validation for batch data if needed (e.g., check if production date is valid)
             if (batchReq.ProductionDate.HasValue && batchReq.ExpirationDate.HasValue && batchReq.ProductionDate > batchReq.ExpirationDate)
             {
                 throw new CustomExceptions.ValidationException("Production date cannot be later than expiration date.");
             }
 
-            // Map updated properties from BatchReq to the existing Batch entity
             _mapper.Map(batchReq, batch);
 
-            // Ensure that VaccineId is valid, if provided
             if (batchReq.VaccineId.HasValue)
             {
                 var vaccine = await _unitOfWork.GetRepository<Vaccine>().GetByIdAsync(batchReq.VaccineId.Value);
@@ -173,48 +170,43 @@ public class BatchService : IBatchService
                 }
             }
 
-            // Update the batch and save changes to the database
             _batchRepository.UpdateAsync(batch);
-            _unitOfWork.CommitTransaction();
+            await _unitOfWork.SaveChangeAsync();
 
-            _logger.LogInformation("Batch updated successfully.");
+            _logger.LogInformation("Batch updated successfully");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError("Error while updating batch: {Error}", ex.Message);
+            _logger.LogError("Error while updating batch: {Error}", e.Message);
             throw;
         }
     }
 
-
-    // Delete a batch by ID
+    // 5. Delete Batch
     public async Task DeleteBatch(Guid batchId)
     {
         try
         {
-            _logger.LogInformation("Start deleting batch with ID: {BatchId}", batchId);
+            _logger.LogInformation("Deleting batch with ID: {BatchId}", batchId);
 
             var batch = await _batchRepository.GetByIdAsync(batchId);
             if (batch == null)
             {
                 _logger.LogInformation("Batch not found with ID: {BatchId}", batchId);
-                throw new KeyNotFoundException($"Batch with ID {batchId} not found.");
+                throw new KeyNotFoundException("Batch not found");
             }
 
-            // Mark the batch as inactive instead of deleting
-            batch.IsActive = false;
+            batch.IsActive = false; // Mark as inactive (soft delete)
 
-            // Update the batch status
-            _batchRepository.UpdateAsync(batch);
-            _unitOfWork.CommitTransaction();
+            await _batchRepository.UpdateAsync(batch);
+            await _unitOfWork.SaveChangeAsync();
 
-            _logger.LogInformation("Batch deleted successfully (marked as inactive).");
+            _logger.LogInformation("Batch deleted successfully (marked as inactive)");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError("Error while deleting batch: {Error}", ex.Message);
+            _logger.LogError("Error while deleting batch: {Error}", e.Message);
             throw;
         }
     }
-
 }

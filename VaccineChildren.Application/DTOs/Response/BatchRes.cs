@@ -1,3 +1,4 @@
+using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Domain.Entities;
 
 namespace VaccineChildren.Application.DTOs.Responses
@@ -11,8 +12,6 @@ namespace VaccineChildren.Application.DTOs.Responses
         public int? Quantity { get; set; }
         public DateTime? ExpirationDate { get; set; }
         public bool? IsActive { get; set; }
-
-
-        public Vaccine Vaccine { get; set; }
+        public VaccineRes Vaccine { get; set; }
     }
 }

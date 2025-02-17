@@ -70,11 +70,11 @@ public partial class VaccineSystemDbContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("batch_id");
             entity.Property(e => e.ExpirationDate)
-                .HasColumnType("timestamp without time zone")
+                .HasConversion(dateTimeConverter)
                 .HasColumnName("expiration_date");
             entity.Property(e => e.IsActive).HasColumnName("is_active");
             entity.Property(e => e.ProductionDate)
-                .HasColumnType("timestamp without time zone")
+                .HasConversion(dateTimeConverter)
                 .HasColumnName("production_date");
             entity.Property(e => e.Quantity).HasColumnName("quantity");
             entity.Property(e => e.VaccineId).HasColumnName("vaccine_id");
