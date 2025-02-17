@@ -3,9 +3,9 @@
 services:
   postgres:
     image: postgres:15
-    container_name: postgres_container
+    container_name: postgres_container_test
     ports:
-      - "8321:8321"
+      - "5400:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mypassword
@@ -14,33 +14,46 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7.0.12
-    container_name: redis_container
+    container_name: redis_container_test
     ports:
-      - "6400:6400"
+      - "6000:6379"
     volumes:
       - redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   vaccinechildren-api:
     build:
-      context: ..
+      context: .
       dockerfile: VaccineChildren.API/Dockerfile  # Đảm bảo đường dẫn chính xác
     container_name: vaccine_children_server
     ports:
       - "5014:5014"
       - "7014:7014"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=vaccine_system;Username=postgres;Password=mypassword
-      - Redis__Connection=redis:6379
+#      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=vaccine_system;Username=postgres;Password=mypassword
+#      - Redis__Connection=redis:6379
       - ASPNETCORE_URLS=http://+:5014
+      - ASPNETCORE_ENVIRONMENT=Dev
     networks:
       - app_network
 
