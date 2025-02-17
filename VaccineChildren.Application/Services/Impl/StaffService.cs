@@ -212,11 +212,9 @@ namespace VaccineChildren.Application.Services.Impl
                 }
 
                 var staffRes = _mapper.Map<StaffRes>(staff);
-
-                // Gán thông tin từ User
+                
                 if (staff.User != null)
                 {
-                    staffRes.Username = staff.User.UserName;
                     staffRes.FullName = staff.User.FullName;
                     staffRes.Email = staff.User.Email;
                     staffRes.Phone = staff.User.Phone;

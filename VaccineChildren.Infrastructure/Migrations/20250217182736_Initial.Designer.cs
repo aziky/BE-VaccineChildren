@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VaccineChildren.Infrastructure;
@@ -11,9 +12,11 @@ using VaccineChildren.Infrastructure;
 namespace VaccineChildren.Infrastructure.Migrations
 {
     [DbContext(typeof(VaccineSystemDbContext))]
-    partial class VaccineSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250217182736_Initial")]
+    partial class Initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -61,10 +64,12 @@ namespace VaccineChildren.Infrastructure.Migrations
             modelBuilder.Entity("PackageVaccine", b =>
                 {
                     b.Property<Guid>("PackageId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("package_id");
 
                     b.Property<Guid>("VaccineId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("vaccine_id");
 
                     b.HasKey("PackageId", "VaccineId")
                         .HasName("package_vaccine_pkey");
@@ -1067,13 +1072,15 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("PackageId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("package_vaccine_package_id_fkey");
 
                     b.HasOne("VaccineChildren.Domain.Entities.Vaccine", null)
                         .WithMany()
                         .HasForeignKey("VaccineId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("package_vaccine_service_id_fkey");
                 });
 
             modelBuilder.Entity("VaccineChildren.Domain.Entities.Batch", b =>

@@ -12,8 +12,8 @@ using VaccineChildren.Infrastructure;
 namespace VaccineChildren.Infrastructure.Migrations
 {
     [DbContext(typeof(VaccineSystemDbContext))]
-    [Migration("20250216170425_InitialSync")]
-    partial class InitialSync
+    [Migration("20250217190243_fix")]
+    partial class fix
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -64,12 +64,10 @@ namespace VaccineChildren.Infrastructure.Migrations
             modelBuilder.Entity("PackageVaccine", b =>
                 {
                     b.Property<Guid>("PackageId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("package_id");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("VaccineId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("vaccine_id");
+                        .HasColumnType("uuid");
 
                     b.HasKey("PackageId", "VaccineId")
                         .HasName("package_vaccine_pkey");
@@ -100,6 +98,9 @@ namespace VaccineChildren.Infrastructure.Migrations
                     b.Property<int?>("Quantity")
                         .HasColumnType("integer")
                         .HasColumnName("quantity");
+
+                    b.Property<string>("TestColumn")
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("VaccineId")
                         .HasColumnType("uuid")
@@ -480,6 +481,12 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<int?>("MaxAge")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MinAge")
+                        .HasColumnType("integer");
+
                     b.Property<string>("PackageName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -489,6 +496,9 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)")
                         .HasColumnName("price");
+
+                    b.Property<string>("Unit")
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp without time zone")
@@ -704,9 +714,8 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("gender");
 
-                    b.Property<int>("RoleId")
-                        .HasColumnType("integer")
-                        .HasColumnName("role_id");
+                    b.Property<int?>("RoleId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -723,15 +732,10 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("updated_by");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("StaffId")
                         .HasName("staff_pkey");
 
                     b.HasIndex("RoleId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("staff", (string)null);
                 });
@@ -1066,15 +1070,13 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("PackageId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("package_vaccine_package_id_fkey");
+                        .IsRequired();
 
                     b.HasOne("VaccineChildren.Domain.Entities.Vaccine", null)
                         .WithMany()
                         .HasForeignKey("VaccineId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("package_vaccine_vaccine_id_fkey");
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("VaccineChildren.Domain.Entities.Batch", b =>
@@ -1209,20 +1211,15 @@ namespace VaccineChildren.Infrastructure.Migrations
 
             modelBuilder.Entity("VaccineChildren.Domain.Entities.Staff", b =>
                 {
-                    b.HasOne("VaccineChildren.Domain.Entities.Role", "Role")
+                    b.HasOne("VaccineChildren.Domain.Entities.Role", null)
                         .WithMany("Staff")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("staff_role_id_fkey");
+                        .HasForeignKey("RoleId");
 
                     b.HasOne("VaccineChildren.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
+                        .WithOne("Staff")
+                        .HasForeignKey("VaccineChildren.Domain.Entities.Staff", "StaffId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Role");
 
                     b.Navigation("User");
                 });
@@ -1277,8 +1274,8 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasConstraintName("vaccine_manufactures_manufacturer_id_fkey");
 
                     b.HasOne("VaccineChildren.Domain.Entities.Vaccine", "Vaccine")
-                        .WithOne("VaccineManufacture")
-                        .HasForeignKey("VaccineChildren.Domain.Entities.VaccineManufacture", "VaccineId")
+                        .WithMany("VaccineManufactures")
+                        .HasForeignKey("VaccineId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("vaccine_manufactures_vaccine_id_fkey");
@@ -1363,13 +1360,15 @@ namespace VaccineChildren.Infrastructure.Migrations
                     b.Navigation("Notifications");
 
                     b.Navigation("Payments");
+
+                    b.Navigation("Staff");
                 });
 
             modelBuilder.Entity("VaccineChildren.Domain.Entities.Vaccine", b =>
                 {
                     b.Navigation("UserCarts");
 
-                    b.Navigation("VaccineManufacture");
+                    b.Navigation("VaccineManufactures");
                 });
 
             modelBuilder.Entity("VaccineChildren.Domain.Entities.VaccineManufacture", b =>

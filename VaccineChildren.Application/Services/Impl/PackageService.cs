@@ -16,7 +16,6 @@ public class PackageService : IPackageService
     private readonly ILogger<PackageService> _logger;
     private readonly IGenericRepository<Package> _packageRepository;
     private readonly IGenericRepository<Vaccine> _vaccineRepository;
-    private readonly IGenericRepository<PackageVaccine> _packageVaccineRepository;
 
     public PackageService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<PackageService> logger)
     {
@@ -25,7 +24,6 @@ public class PackageService : IPackageService
         _logger = logger;
         _packageRepository = _unitOfWork.GetRepository<Package>();
         _vaccineRepository = _unitOfWork.GetRepository<Vaccine>();
-        _packageVaccineRepository = _unitOfWork.GetRepository<PackageVaccine>();
     }
 
     public async Task CreatePackage(PackageReq packageReq)
@@ -34,45 +32,35 @@ public class PackageService : IPackageService
         try
         {
             _logger.LogInformation("Creating new package");
+
+            // Tạo mới package từ packageReq
             var package = _mapper.Map<Package>(packageReq);
-            package.PackageId = Guid.NewGuid();
-            package.CreatedAt = DateTime.UtcNow;
+            package.PackageId = Guid.NewGuid(); // Tạo PackageId mới
+            package.CreatedAt = DateTime.UtcNow.ToLocalTime();
             package.IsActive = true;
 
             decimal totalVaccinePrice = 0;
+
+            // Kiểm tra vaccineIds và tính tổng giá trị vaccine
             if (packageReq.VaccineIds != null && packageReq.VaccineIds.Any())
             {
-                var allVaccines = await _vaccineRepository.GetAllAsync();
-                var vaccines = allVaccines.Where(v => packageReq.VaccineIds.Contains(v.VaccineId)).ToList();
-                
-                totalVaccinePrice = vaccines
-                    .SelectMany(v => v.VaccineManufactures)  
-                    .Sum(vm => vm.Price ?? 0);
+                // Lấy thông tin các Vaccine liên quan
+                var vaccines = await _vaccineRepository.GetAllAsync("VaccineManufactures");
+                vaccines = vaccines.Where(v => packageReq.VaccineIds.Contains(v.VaccineId)).ToList();
+                totalVaccinePrice = vaccines.Sum(v => v.VaccineManufactures.Sum(vm => vm.Price ?? 0));
+
+                // Gán các Vaccine vào Package
+                package.Vaccines = vaccines;
             }
 
+            // Tính toán lại giá trị package sau khi áp dụng discount
+            package.Price = totalVaccinePrice * (1 - (packageReq.Discount / 100));
 
-
-
-            // Tính giá package sau khi áp dụng discount
-            package.Price = totalVaccinePrice * (1-(packageReq.Discount/100));
-
+            // Lưu package vào bảng
             await _packageRepository.InsertAsync(package);
-
-            if (packageReq.VaccineIds != null && packageReq.VaccineIds.Any())
-            {
-                var packageVaccines = packageReq.VaccineIds.Select(vaccineId => new PackageVaccine
-                {
-                    PackageId = package.PackageId,
-                    VaccineId = vaccineId
-                }).ToList();
-
-                foreach (var packageVaccine in packageVaccines)
-                {
-                    await _packageVaccineRepository.InsertAsync(packageVaccine);
-                }
-            }
-
             await _unitOfWork.SaveChangeAsync();
+
+            // Commit transaction
             _unitOfWork.CommitTransaction();
             _logger.LogInformation("Package created successfully");
         }
@@ -84,15 +72,14 @@ public class PackageService : IPackageService
         }
     }
 
+
     public async Task<PackageRes?> GetPackageById(Guid packageId)
     {
         try
         {
             _logger.LogInformation("Retrieving package with ID: {PackageId}", packageId);
-            var package = await _packageRepository.FindAsync(
-                p => p.PackageId == packageId,
-                includeProperties: "PackageVaccines.Vaccine.VaccineManufacture.Manufacturer"
-            );
+            // Lấy package với thông tin Vaccine
+            var package = await _packageRepository.FindAsync(p => p.PackageId == packageId, "Vaccines");
 
             return package != null ? _mapper.Map<PackageRes>(package) : null;
         }
@@ -103,26 +90,15 @@ public class PackageService : IPackageService
         }
     }
 
+
     public async Task<List<PackageRes>> GetAllPackages()
     {
         try
         {
             _logger.LogInformation("Retrieving all packages");
+            var packages = await _packageRepository.GetAllAsync(includeProperties: "Vaccines");
 
-            // Retrieve all packages asynchronously
-            var packages = await _packageRepository.GetAllAsync(
-                "PackageVaccines.Vaccine.VaccineManufactures.Manufacturer"
-            );
-
-
-            // Filter for IsActive = true using LINQ on the retrieved list
-            var activePackages = packages
-                .Where(p => p.PackageVaccines
-                    .Any(pv => pv.Vaccine.VaccineManufactures
-                        .Any(vm => vm.Manufacturer.IsActive == true)))
-                .ToList();
-
-
+            var activePackages = packages.Where(p => p.IsActive.Equals(true)).ToList();
             return _mapper.Map<List<PackageRes>>(activePackages);
         }
         catch (Exception ex)
@@ -143,26 +119,10 @@ public class PackageService : IPackageService
             if (package == null) throw new KeyNotFoundException("Package not found");
 
             _mapper.Map(packageReq, package);
-            package.UpdatedAt = DateTime.UtcNow;
-
+            package.UpdatedAt = DateTime.UtcNow.ToLocalTime();
             await _packageRepository.UpdateAsync(package);
-            await _packageVaccineRepository.DeleteAsync(pv => pv.PackageId == packageId);
-
-            if (packageReq.VaccineIds != null && packageReq.VaccineIds.Any())
-            {
-                var packageVaccines = packageReq.VaccineIds.Select(vaccineId => new PackageVaccine
-                {
-                    PackageId = package.PackageId,
-                    VaccineId = vaccineId
-                }).ToList();
-                foreach (var packageVaccine in packageVaccines)
-                {
-                    await _packageVaccineRepository.InsertAsync(packageVaccine);
-                }
-
-            }
-
             await _unitOfWork.SaveChangeAsync();
+
             _unitOfWork.CommitTransaction();
             _logger.LogInformation("Package updated successfully");
         }
@@ -185,6 +145,7 @@ public class PackageService : IPackageService
             package.IsActive = false;
             await _packageRepository.UpdateAsync(package);
             await _unitOfWork.SaveChangeAsync();
+
             _logger.LogInformation("Package deleted successfully");
         }
         catch (Exception ex)
