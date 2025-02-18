@@ -7,6 +7,7 @@ using VaccineChildren.Domain.Abstraction;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VaccineChildren.Core.Exceptions;
 
 namespace VaccineChildren.Application.Services.Impl
 {
@@ -32,13 +33,18 @@ namespace VaccineChildren.Application.Services.Impl
             try
             {
                 _logger.LogInformation("Start creating vaccine");
+                if (vaccineReq.MinAge > vaccineReq.MaxAge)
+                {
+                    throw new CustomExceptions.ValidationException("MinAge cannot be greater than MaxAge.");
+                }
+
+
 
                 // Ensure ManufacturerId is valid
                 var manufacturer = await _unitOfWork.GetRepository<Manufacturer>().GetByIdAsync(Guid.Parse(vaccineReq.ManufacturerId));
                 if (manufacturer == null)
                 {
-                    _logger.LogError("Manufacturer not found with ID: {ManufacturerId}", vaccineReq.ManufacturerId);
-                    throw new KeyNotFoundException("Manufacturer not found");
+                    throw new CustomExceptions.EntityNotFoundException("Manufacturer", vaccineReq.ManufacturerId);
                 }
 
                 // Create new Vaccine entity
@@ -94,15 +100,27 @@ namespace VaccineChildren.Application.Services.Impl
                     throw new KeyNotFoundException("Vaccine not found");
                 }
 
-                // Get the manufacturer name from the VaccineManufacture relation
-                var manufacturerName = vaccine.VaccineManufacture?.Manufacturer?.Name;
+                var manufacturer = vaccine.VaccineManufacture?.Manufacturer;
                 var price = vaccine.VaccineManufacture?.Price ?? 0;
 
                 var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
                 vaccineRes.Description = System.Text.Json.JsonSerializer.Deserialize<DTOs.Response.DescriptionDetail>(vaccine.Description);
-
-                vaccineRes.ManufacturerName = manufacturerName;
                 vaccineRes.Price = price;
+
+                // Ánh xạ Manufacturer vào DTO
+                if (manufacturer != null)
+                {
+                    vaccineRes.Manufacturer = new ManufacturerRes
+                    {
+                        ManufacturerId = manufacturer.ManufacturerId,
+                        Name = manufacturer.Name,
+                        ShortName = manufacturer.ShortName,
+                        Description = manufacturer.Description,
+                        CountryName = manufacturer.CountryName,
+                        CountryCode = manufacturer.CountryCode,
+                        IsActive = manufacturer.IsActive
+                    };
+                }
 
                 return vaccineRes;
             }
@@ -112,6 +130,8 @@ namespace VaccineChildren.Application.Services.Impl
                 throw;
             }
         }
+
+
 
         public async Task<List<VaccineRes>> GetAllVaccines()
         {
@@ -126,21 +146,32 @@ namespace VaccineChildren.Application.Services.Impl
                     return new List<VaccineRes>();
                 }
 
-                // Map to VaccineRes and set ManufacturerName and Price from related tables
-                var vaccineResList = new List<VaccineRes>();
-
-                foreach (var vaccine in vaccines)
+                var vaccineResList = vaccines.Select(vaccine =>
                 {
-                    var manufacturerName = vaccine.VaccineManufacture?.Manufacturer?.Name;
+                    var manufacturer = vaccine.VaccineManufacture?.Manufacturer;
                     var price = vaccine.VaccineManufacture?.Price ?? 0;
 
                     var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
-                    vaccineRes.ManufacturerName = manufacturerName;
-                    vaccineRes.Price = price;
                     vaccineRes.Description = System.Text.Json.JsonSerializer.Deserialize<DTOs.Response.DescriptionDetail>(vaccine.Description);
+                    vaccineRes.Price = price;
 
-                    vaccineResList.Add(vaccineRes);
-                }
+                    // Ánh xạ Manufacturer vào DTO
+                    if (manufacturer != null)
+                    {
+                        vaccineRes.Manufacturer = new ManufacturerRes
+                        {
+                            ManufacturerId = manufacturer.ManufacturerId,
+                            Name = manufacturer.Name,
+                            ShortName = manufacturer.ShortName,
+                            Description = manufacturer.Description,
+                            CountryName = manufacturer.CountryName,
+                            CountryCode = manufacturer.CountryCode,
+                            IsActive = manufacturer.IsActive
+                        };
+                    }
+
+                    return vaccineRes;
+                }).ToList();
 
                 return vaccineResList;
             }
@@ -152,12 +183,17 @@ namespace VaccineChildren.Application.Services.Impl
         }
 
 
+
         // 4. Update Vaccine
         public async Task UpdateVaccine(Guid vaccineId, VaccineReq vaccineReq)
         {
             try
             {
                 _logger.LogInformation("Start updating vaccine with ID: {VaccineId}", vaccineId);
+                if (vaccineReq.MinAge > vaccineReq.MaxAge)
+                {
+                    throw new CustomExceptions.ValidationException("MinAge cannot be greater than MaxAge.");
+                }
 
                 var vaccine = await _vaccineRepository.GetByIdAsync(vaccineId);
 
@@ -264,11 +300,28 @@ namespace VaccineChildren.Application.Services.Impl
 
                 var vaccineResList = filteredVaccines.Select(vaccine =>
                 {
+                    var manufacturer = vaccine.VaccineManufacture?.Manufacturer; // Khai báo biến manufacturer
                     var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
-                    vaccineRes.ManufacturerName = vaccine.VaccineManufacture?.Manufacturer?.Name;
+
+                    if (manufacturer != null)
+                    {
+                        vaccineRes.Manufacturer = new ManufacturerRes
+                        {
+                            ManufacturerId = manufacturer.ManufacturerId,
+                            Name = manufacturer.Name,
+                            ShortName = manufacturer.ShortName,
+                            Description = manufacturer.Description,
+                            CountryName = manufacturer.CountryName,
+                            CountryCode = manufacturer.CountryCode,
+                            IsActive = manufacturer.IsActive
+                        };
+                    }
+
                     vaccineRes.Price = vaccine.VaccineManufacture?.Price ?? 0;
                     return vaccineRes;
                 }).ToList();
+
+
 
                 _logger.LogInformation("Retrieved {Count} vaccines matching criteria", vaccineResList.Count);
                 return vaccineResList;
@@ -299,8 +352,24 @@ namespace VaccineChildren.Application.Services.Impl
 
                 var vaccineResList = filteredVaccines.Select(vaccine =>
                 {
+                    var manufacturer = vaccine.VaccineManufacture?.Manufacturer; // Lấy manufacturer từ vaccine
+
                     var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
-                    vaccineRes.ManufacturerName = vaccine.VaccineManufacture?.Manufacturer?.Name;
+
+                    if (manufacturer != null)
+                    {
+                        vaccineRes.Manufacturer = new ManufacturerRes
+                        {
+                            ManufacturerId = manufacturer.ManufacturerId,
+                            Name = manufacturer.Name,
+                            ShortName = manufacturer.ShortName,
+                            Description = manufacturer.Description,
+                            CountryName = manufacturer.CountryName,
+                            CountryCode = manufacturer.CountryCode,
+                            IsActive = manufacturer.IsActive
+                        };
+                    }
+
                     vaccineRes.Price = vaccine.VaccineManufacture?.Price ?? 0;
                     return vaccineRes;
                 }).ToList();
@@ -334,11 +403,28 @@ namespace VaccineChildren.Application.Services.Impl
 
                 var vaccineResList = filteredVaccines.Select(vaccine =>
                 {
+                    var manufacturer = vaccine.VaccineManufacture?.Manufacturer; // Lấy manufacturer từ vaccine
+
                     var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
-                    vaccineRes.ManufacturerName = vaccine.VaccineManufacture?.Manufacturer?.Name;
+
+                    if (manufacturer != null)
+                    {
+                        vaccineRes.Manufacturer = new ManufacturerRes
+                        {
+                            ManufacturerId = manufacturer.ManufacturerId,
+                            Name = manufacturer.Name,
+                            ShortName = manufacturer.ShortName,
+                            Description = manufacturer.Description,
+                            CountryName = manufacturer.CountryName,
+                            CountryCode = manufacturer.CountryCode,
+                            IsActive = manufacturer.IsActive
+                        };
+                    }
+
                     vaccineRes.Price = vaccine.VaccineManufacture?.Price ?? 0;
                     return vaccineRes;
                 }).ToList();
+
 
                 _logger.LogInformation("Retrieved {Count} vaccines matching criteria", vaccineResList.Count);
                 return vaccineResList;
@@ -369,8 +455,24 @@ namespace VaccineChildren.Application.Services.Impl
 
                 var vaccineResList = filteredVaccines.Select(vaccine =>
                 {
+                    var manufacturer = vaccine.VaccineManufacture?.Manufacturer; // Lấy manufacturer từ vaccine
+
                     var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
-                    vaccineRes.ManufacturerName = vaccine.VaccineManufacture?.Manufacturer?.Name;
+
+                    if (manufacturer != null)
+                    {
+                        vaccineRes.Manufacturer = new ManufacturerRes
+                        {
+                            ManufacturerId = manufacturer.ManufacturerId,
+                            Name = manufacturer.Name,
+                            ShortName = manufacturer.ShortName,
+                            Description = manufacturer.Description,
+                            CountryName = manufacturer.CountryName,
+                            CountryCode = manufacturer.CountryCode,
+                            IsActive = manufacturer.IsActive
+                        };
+                    }
+
                     vaccineRes.Price = vaccine.VaccineManufacture?.Price ?? 0;
                     return vaccineRes;
                 }).ToList();

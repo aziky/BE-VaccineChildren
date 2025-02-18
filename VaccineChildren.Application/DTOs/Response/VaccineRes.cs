@@ -1,4 +1,6 @@
 namespace VaccineChildren.Application.DTOs.Response;
+
+using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Domain.Entities;
 
 public class DescriptionDetail
@@ -21,6 +23,6 @@ public class VaccineRes
     public string? Unit { get; set; }
     public string? Image { get; set; }
     public bool? IsActive { get; set; }
-    public string ManufacturerName { get; set; }
+    public ManufacturerRes Manufacturer { get; set; }
     public decimal Price { get; set; }
 }
