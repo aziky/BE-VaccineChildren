@@ -41,5 +41,9 @@ public static class StaticEnum
         [CustomName("completed")] Completed,
         [CustomName("cancelled")] Cancelled,
     }
-    
+    public enum ScheduleStatusEnum
+    {
+        [CustomName("upcoming")] Upcoming,
+        [CustomName("completed")] Completed,
+    }
 }
