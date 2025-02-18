@@ -28,8 +28,8 @@ public partial class Package
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
     public virtual ICollection<UserCart> UserCarts { get; set; } = new List<UserCart>();
-    
+
     public virtual ICollection<Vaccine> Vaccines { get; set; } = new List<Vaccine>();
-    public virtual ICollection<PackageVaccine> PackageVaccines { get; set; } = new List<PackageVaccine>();
+
 
 }

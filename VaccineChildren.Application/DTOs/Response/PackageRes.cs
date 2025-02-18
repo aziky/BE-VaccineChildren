@@ -12,6 +12,5 @@ namespace VaccineChildren.Application.DTOs.Response
         public string? Unit { get; set; }
         public bool? IsActive { get; set; }
         public List<VaccineRes>? Vaccines { get; set; }
-
     }
 }

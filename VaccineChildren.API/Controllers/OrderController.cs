@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Core.Base;
@@ -24,7 +23,7 @@ public class OrderController :  BaseController
     {
         try
         {
-            await _orderService.CreateAppointmentAsync(request);
+            await _orderService.CreateOrderAsync(request);
             return Ok(BaseResponse<string>.CreateResponse("Order created"));
         }
         catch (Exception e)

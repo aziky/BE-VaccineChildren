@@ -1,13 +1,15 @@
 ﻿using System.Globalization;
-using AutoMapper;
-using VaccineChildren.Application.DTOs.Request;
-using VaccineChildren.Application.DTOs.Response;
-using VaccineChildren.Core.Store;
-using VaccineChildren.Domain.Entities;
-
-namespace VaccineChildren.Application;
-
-public class MappingProfile : Profile
+ using AutoMapper;
+ using VaccineChildren.Application.DTOs.Request;
+ using VaccineChildren.Application.DTOs.Requests;
+ using VaccineChildren.Application.DTOs.Response;
+ using VaccineChildren.Application.DTOs.Responses;
+ using VaccineChildren.Core.Store;
+ using VaccineChildren.Domain.Entities;
+ 
+ namespace VaccineChildren.Application;
+ 
+ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
@@ -21,13 +23,12 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.User.FullName))
             .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.User.Phone))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email))
-            .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.User.Address))
-            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName));
+            .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.User.Address));
         CreateMap<VaccineReq, Vaccine>();
-        // CreateMap<Vaccine, VaccineRes>();
         CreateMap<Vaccine, VaccineRes>()
-            .ForMember(dest => dest.Manufacturer, opt => opt.MapFrom(src => src.VaccineManufacture.Manufacturer))
-            .ForMember(dest => dest.Description, opt => opt.Ignore()) // Bỏ qua ánh xạ tự động
+            .ForMember(dest => dest.Manufacturer, opt => opt.MapFrom(src => src.VaccineManufactures.FirstOrDefault().Manufacturer))
+            .ForMember(dest => dest.Description, opt => opt.Ignore()) // Ignore automatic mapping for description
+            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.VaccineManufactures.Sum(vm => vm.Price ?? 0))) // Sum up the prices from VaccineManufactures
             .AfterMap((src, dest) =>
             {
                 if (!string.IsNullOrEmpty(src.Description))
@@ -37,13 +38,24 @@ public class MappingProfile : Profile
             });
         CreateMap<ManufacturerReq, Manufacturer>();
         CreateMap<Manufacturer, ManufacturerRes>();
-
+ 
         CreateMap<CreateOrderReq, Child>()
             .ForMember(dest => dest.Dob, opt => opt.Ignore())
             .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender.ToLower()));
 
-
         CreateMap<PackageReq, Package>();
-        CreateMap<Package, PackageRes>();
+        CreateMap<Package, PackageRes>()
+            .ForMember(dest => dest.Vaccines, opt => opt.MapFrom(src => src.Vaccines));
+        CreateMap<BatchReq, Batch>();
+        CreateMap<Batch, BatchRes>();
+        
+        // Correct mapping from VaccineManufacture to VaccineRes
+        CreateMap<VaccineManufacture, VaccineRes>()
+            .ForMember(dest => dest.Manufacturer, opt => opt.MapFrom(src => src.Manufacturer)) // Map Manufacturer from VaccineManufacture
+            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price ?? 0)) // Map Price, defaulting to 0 if null
+            .ForMember(dest => dest.VaccineId, opt => opt.MapFrom(src => src.VaccineId)) // Map VaccineId if necessary
+            .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.Vaccine.VaccineName)); // Assuming Vaccine has a VaccineName property
+
     }
 }
+ 

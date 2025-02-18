@@ -8,7 +8,7 @@ namespace VaccineChildren.Infrastructure;
 
 public partial class VaccineSystemDbContext : DbContext
 {
-
+    
     public VaccineSystemDbContext()
     {
     }
@@ -33,8 +33,7 @@ public partial class VaccineSystemDbContext : DbContext
     public virtual DbSet<Order> Orders { get; set; }
 
     public virtual DbSet<Package> Packages { get; set; }
-    public virtual DbSet<PackageVaccine> PackageVaccines { get; set; }
-
+    
     public virtual DbSet<Payment> Payments { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -71,11 +70,11 @@ public partial class VaccineSystemDbContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("batch_id");
             entity.Property(e => e.ExpirationDate)
-                .HasColumnType("timestamp without time zone")
+                .HasConversion(dateTimeConverter)
                 .HasColumnName("expiration_date");
             entity.Property(e => e.IsActive).HasColumnName("is_active");
             entity.Property(e => e.ProductionDate)
-                .HasColumnType("timestamp without time zone")
+                .HasConversion(dateTimeConverter)
                 .HasColumnName("production_date");
             entity.Property(e => e.Quantity).HasColumnName("quantity");
             entity.Property(e => e.VaccineId).HasColumnName("vaccine_id");
@@ -362,7 +361,7 @@ public partial class VaccineSystemDbContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("package_id");
             entity.Property(e => e.CreatedAt)
-                .HasColumnType("timestamp with time zone")
+                .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy)
                 .HasMaxLength(255)
@@ -379,51 +378,25 @@ public partial class VaccineSystemDbContext : DbContext
                 .HasPrecision(10, 2)
                 .HasColumnName("price");
             entity.Property(e => e.UpdatedAt)
-                .HasColumnType("timestamp with time zone")
+                .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
-            entity.Property(e => e.MaxAge).HasColumnName("max_age");
-            entity.Property(e => e.MinAge).HasColumnName("min_age");
-            entity.Property(e => e.Unit).HasColumnName("unit")
-                .HasMaxLength(20);
 
             entity.HasMany(d => d.Vaccines)
                 .WithMany(p => p.Packages)
-                .UsingEntity<PackageVaccine>(
-                    j => j.HasOne(pv => pv.Vaccine)
-                            .WithMany()
-                            .HasForeignKey(pv => pv.VaccineId)
-                            .HasConstraintName("fk_package_vaccine_vaccine"),
-                    j => j.HasOne(pv => pv.Package)
-                            .WithMany()
-                            .HasForeignKey(pv => pv.PackageId)
-                            .HasConstraintName("fk_package_vaccine_package"),
+                .UsingEntity<Dictionary<string, object>>(
+                    "PackageVaccine",
+                    r => r.HasOne<Vaccine>().WithMany().HasForeignKey("VaccineId"),
+                    l => l.HasOne<Package>().WithMany().HasForeignKey("PackageId"),
                     j =>
                     {
+                        j.HasKey("PackageId", "VaccineId").HasName("package_vaccine_pkey");
                         j.ToTable("package_vaccine");
-                        j.HasKey(pv => new { pv.PackageId, pv.VaccineId });
-                        j.Property(pv => pv.PackageId).HasColumnName("package_id");
-                        j.Property(pv => pv.VaccineId).HasColumnName("vaccine_id");
                     });
         });
-
-                    modelBuilder.Entity<PackageVaccine>()
-                        .HasKey(pv => new { pv.PackageId, pv.VaccineId });
-
-                    modelBuilder.Entity<PackageVaccine>()
-                        .HasOne(pv => pv.Package)
-                        .WithMany(p => p.PackageVaccines)
-                        .HasForeignKey(pv => pv.PackageId);
-
-                    modelBuilder.Entity<PackageVaccine>()
-                        .HasOne(pv => pv.Vaccine)
-                        .WithMany(v => v.PackageVaccines)
-                        .HasForeignKey(pv => pv.VaccineId);
-
-
-
+        
         modelBuilder.Entity<Payment>(entity =>
         {
             entity.HasKey(e => e.PaymentId).HasName("payments_pkey");
@@ -568,7 +541,6 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.Gender)
                 .HasMaxLength(50)
                 .HasColumnName("gender");
-            entity.Property(e => e.RoleId).HasColumnName("role_id");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasColumnName("status");
@@ -578,14 +550,8 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
-
-            entity.HasOne(d => d.Role).WithMany(p => p.Staff)
-                .HasForeignKey(d => d.RoleId)
-                .HasConstraintName("staff_role_id_fkey");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.RoleId).HasColumnName("role_id");
             entity.Property(e => e.Status)
-                .HasColumnType("text")
+                .HasColumnType("text") 
                 .HasColumnName("status");
         });
 
@@ -744,8 +710,8 @@ public partial class VaccineSystemDbContext : DbContext
                 .HasForeignKey(d => d.ManufacturerId)
                 .HasConstraintName("vaccine_manufactures_manufacturer_id_fkey");
 
-            entity.HasOne(d => d.Vaccine).WithOne(p => p.VaccineManufacture)
-                .HasForeignKey<VaccineManufacture>(d => d.VaccineId)
+            entity.HasOne(d => d.Vaccine).WithMany(p => p.VaccineManufactures)
+                .HasForeignKey(d => d.VaccineId)
                 .HasConstraintName("vaccine_manufactures_vaccine_id_fkey");
         });
 

@@ -40,7 +40,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
-
+    
     builder.Services.AddSwaggerGen(options =>
 {
     options.MapType<DateOnly>(() => new OpenApiSchema

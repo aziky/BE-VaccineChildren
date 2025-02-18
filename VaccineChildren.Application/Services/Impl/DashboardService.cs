@@ -30,14 +30,14 @@ public class DashboardService : IDashboardService
             int totalAccount = 0;
             AccountRes accountRes = new AccountRes();
 
-            IList<Staff> staffList = await staffRepository.GetAllAsync(query => query.Include(r => r.Role)
+            IList<Staff> staffList = await staffRepository.GetAllAsync(query => query.Include(r => r.User.Role)
                 .Where(s => s.CreatedAt.HasValue && s.CreatedAt.Value.Year <= year));
 
             foreach (var staff in staffList)
             {
-                if (staff.Role == null) continue;
+                if (staff.User.Role == null) continue;
 
-                switch (staff.Role.RoleName)
+                switch (staff.User.Role.RoleName)
                 {
                     case var roleName when roleName == StaticEnum.RoleEnum.Admin.Name():
                         UpdateAccountCount(accountRes, staff,

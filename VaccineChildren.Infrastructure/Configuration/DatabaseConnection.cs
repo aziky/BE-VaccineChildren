@@ -7,6 +7,11 @@ public class DatabaseConnection
 {
     private readonly ILogger<DatabaseConnection> _logger;
 
+    public DatabaseConnection()
+    {
+        
+    }
+
     public DatabaseConnection(ILogger<DatabaseConnection> logger)
     {
         _logger = logger;
@@ -25,7 +30,7 @@ public class DatabaseConnection
     {
         string connectionString =
             $"Host={Host};Port={Port};Database={Database};Username={Username};Password={Password};SSL Mode={SSLMode};Trust Server Certificate={TrustServerCertificate};Pooling={Pooling};MaxPoolSize={MaxPoolSize};";
-        _logger.LogInformation("{ClassName} - Generated connection string: {ConnectionString}", nameof(DatabaseConnection), connectionString); 
+        _logger?.LogInformation("{ClassName} - Generated connection string: {ConnectionString}", nameof(DatabaseConnection), connectionString); 
         return connectionString;
     }
 }

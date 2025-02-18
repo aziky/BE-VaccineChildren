@@ -30,9 +30,7 @@ public partial class Vaccine
 
     public virtual ICollection<UserCart> UserCarts { get; set; } = new List<UserCart>();
 
-    public virtual VaccineManufacture? VaccineManufacture { get; set; }
-
+    public virtual ICollection<VaccineManufacture> VaccineManufactures { get; set; } = new List<VaccineManufacture>();
     public virtual ICollection<Package> Packages { get; set; } = new List<Package>();
-    public virtual ICollection<PackageVaccine> PackageVaccines { get; set; } = new List<PackageVaccine>();
-
+    
 }

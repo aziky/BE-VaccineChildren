@@ -37,7 +37,7 @@ public static class CustomExceptions
         public EntityNotFoundException(string entityName, string entityId) 
             : base($"{entityName} with ID {entityId} was not found.") { }
 
-        public EntityNotFoundException(string message) : base(message) { }
+        public EntityNotFoundException(string message, Guid? vaccineId) : base(message) { }
 
         public EntityNotFoundException(string message, Exception innerException) : base(message, innerException) { }
     }
