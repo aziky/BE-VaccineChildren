@@ -4,6 +4,7 @@ public class CreateOrderReq
 {
     
     public string UserId { get; set; }
+    public string ChildId { get; set; }
     public string FullName { get; set; }
     public string Dob { get; set; }
     public string Gender { get; set; }
