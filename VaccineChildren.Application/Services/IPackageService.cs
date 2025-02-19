@@ -1,5 +1,6 @@
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
+using VaccineChildren.Domain.Entities;
 
 public interface IPackageService
 {
@@ -8,4 +9,5 @@ public interface IPackageService
     Task<List<PackageRes>> GetAllPackages();
     Task UpdatePackage(Guid packageId, PackageReq packageReq);
     Task DeletePackage(Guid packageId);
+
 }
