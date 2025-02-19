@@ -1,6 +1,9 @@
-﻿public interface IRsaService
+﻿using Microsoft.IdentityModel.Tokens;
+
+public interface IRsaService
 {
     string Encrypt(string data);
     string Decrypt(string encryptedData);
-    // string GenerateJwtToken(string userId, string role, int expirationHours = 1);
+    SecurityKey GetRsaSecurityKey();
+    SigningCredentials GetSigningCredentials();
 }

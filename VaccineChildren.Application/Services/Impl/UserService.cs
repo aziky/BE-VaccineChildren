@@ -152,28 +152,55 @@ public class UserService : IUserService
         return decryptedPassword != null && inputPassword == decryptedPassword;
     }
 
-    private string GenerateJwtToken(User user)
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_jwtSecret);
-    
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.Name, user.UserId.ToString()),
-                new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "User")
-            }),
-            Expires = DateTime.UtcNow.AddHours(1),
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-        };
-    
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
-    }
     // private string GenerateJwtToken(User user)
     // {
-    //     return _rsaService.GenerateJwtToken(user.UserId.ToString(), user.Role?.RoleName ?? "User");
+    //     var tokenHandler = new JwtSecurityTokenHandler();
+    //     var key = Encoding.ASCII.GetBytes(_jwtSecret);
+    //
+    //     var tokenDescriptor = new SecurityTokenDescriptor
+    //     {
+    //         Subject = new ClaimsIdentity(new[]
+    //         {
+    //             new Claim(ClaimTypes.Name, user.UserId.ToString()),
+    //             new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "User")
+    //         }),
+    //         Expires = DateTime.UtcNow.AddHours(1),
+    //         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+    //     };
+    //
+    //     var token = tokenHandler.CreateToken(tokenDescriptor);
+    //     return tokenHandler.WriteToken(token);
     // }
+    private string GenerateJwtToken(User user)
+    {
+        try
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var signingCredentials = _rsaService.GetSigningCredentials();
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.Name, user.UserId.ToString()),
+                    new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "User"),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString())
+                }),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = signingCredentials,
+                Issuer = "VaccineChildren",
+                Audience = "VaccineChildren.API"
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error generating JWT token: {Message}", ex.Message);
+            throw new InvalidOperationException("Failed to generate JWT token.", ex);
+        }
+    }
 
 }

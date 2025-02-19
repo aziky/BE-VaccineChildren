@@ -1,7 +1,6 @@
 using VaccineChildren.API;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using VaccineChildren.Core.Store;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Any;
@@ -39,18 +38,13 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
-});
     
-    builder.Services.AddSwaggerGen(options =>
-{
-    options.MapType<DateOnly>(() => new OpenApiSchema
+    c.MapType<DateOnly>(() => new OpenApiSchema
     {
         Type = "string",
         Format = "date",
         Example = new OpenApiString("dd-MM-yyyy") 
     });
-
-
 });
 
 builder.Services.AddConfig(builder.Configuration);
@@ -58,13 +52,18 @@ builder.Services.AddConfig(builder.Configuration);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        var serviceProvider = builder.Services.BuildServiceProvider();
+        var rsaService = serviceProvider.GetRequiredService<IRsaService>();
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Secret"])),
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            IssuerSigningKey = rsaService.GetRsaSecurityKey(),
+            ValidateIssuer = true,
+            ValidIssuer = "VaccineChildren",
+            ValidateAudience = true,
+            ValidAudience = "VaccineChildren.API",
+            ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
     });
