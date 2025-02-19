@@ -9,7 +9,6 @@ namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-// [Authorize (Roles = "user, admin")]
 public class UserController : BaseController
 {
     private readonly ILogger<UserController> _logger;
