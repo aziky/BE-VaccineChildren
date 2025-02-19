@@ -16,10 +16,10 @@ namespace VaccineChildren.Application.Services.Impl
         private readonly ILogger<IStaffService> _logger;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly RsaService _rsaService;
+        private readonly IRsaService _rsaService;
 
         private readonly IGenericRepository<User> _userRepository;
-        public StaffService(ILogger<IStaffService> logger, IUnitOfWork unitOfWork, IMapper mapper, RsaService rsaService)
+        public StaffService(ILogger<IStaffService> logger, IUnitOfWork unitOfWork, IMapper mapper, IRsaService rsaService)
         {
             _logger = logger;
             _unitOfWork = unitOfWork;
@@ -62,19 +62,15 @@ namespace VaccineChildren.Application.Services.Impl
                     Email = staffReq.Email,
                     Address = staffReq.Address,
                     CreatedAt = DateTime.UtcNow.ToLocalTime(),
-                    RoleId = 2,
+                    RoleId = 2,  
                 };
-
-                // Chèn User vào cơ sở dữ liệu
+                
                 await userRepository.InsertAsync(user);
                 await _unitOfWork.SaveChangeAsync();
-
-                // Tạo mới Staff
+                
                 var staff = new Staff
                 {
-                    StaffId = Guid.NewGuid(),
-                    UserId = user.UserId,
-                    RoleId = 2,
+                    StaffId = user.UserId,
                     Dob = staffReq.Dob,
                     Gender = staffReq.Gender,
                     BloodType = staffReq.BloodType,
@@ -86,6 +82,7 @@ namespace VaccineChildren.Application.Services.Impl
                 var staffRepository = _unitOfWork.GetRepository<Staff>();
                 await staffRepository.InsertAsync(staff);
                 await _unitOfWork.SaveChangeAsync();
+
 
                 // Cam kết giao dịch
                 _unitOfWork.CommitTransaction();
@@ -150,39 +147,45 @@ namespace VaccineChildren.Application.Services.Impl
 
                 if (staff == null)
                 {
-                    _logger.LogInformation("Staff not found with ID: {StaffId}", staffId);
+                    _logger.LogWarning("Staff not found with ID: {StaffId}", staffId);
                     throw new KeyNotFoundException("Staff not found");
                 }
 
+                // Vì StaffId trùng với UserId, ta có thể dùng staffId để lấy thông tin User
                 var userRepository = _unitOfWork.GetRepository<User>();
-                var user = await userRepository.GetByIdAsync(staff.UserId);
+                var user = await userRepository.GetByIdAsync(staffId);
 
                 if (user == null)
                 {
+                    _logger.LogWarning("User associated with staff not found for ID: {StaffId}", staffId);
                     throw new KeyNotFoundException("User associated with staff not found");
                 }
 
+                // Cập nhật thông tin Staff
                 staff.Gender = staffReq.Gender;
                 staff.Dob = staffReq.Dob;
                 staff.BloodType = staffReq.BloodType;
                 staff.UpdatedAt = DateTime.UtcNow.ToLocalTime();
 
+                // Cập nhật thông tin User
                 user.FullName = staffReq.FullName;
                 user.Phone = staffReq.Phone;
                 user.Email = staffReq.Email;
                 user.Address = staffReq.Address;
                 user.UpdatedAt = DateTime.UtcNow.ToLocalTime();
 
-                await userRepository.UpdateAsync(user);
+                // Lưu thay đổi
                 await staffRepository.UpdateAsync(staff);
+                await userRepository.UpdateAsync(user);
                 await _unitOfWork.SaveChangeAsync();
 
+                // Commit transaction
                 _unitOfWork.CommitTransaction();
-                _logger.LogInformation("Staff updated successfully");
+                _logger.LogInformation("Staff updated successfully with ID: {StaffId}", staffId);
             }
             catch (Exception e)
             {
-                _logger.LogError("Error while updating staff: {Error}", e.Message);
+                _logger.LogError("Error while updating staff (ID: {StaffId}): {Error}", staffId, e.Message);
                 _unitOfWork.RollBack();
                 throw;
             }
@@ -199,8 +202,7 @@ namespace VaccineChildren.Application.Services.Impl
                 _logger.LogInformation("Retrieving staff with ID: {StaffId}", staffId);
                 var staffRepository = _unitOfWork.GetRepository<Staff>();
                 var staff = await staffRepository.Entities
-                    .Include(s => s.User)
-                    .Include(s => s.Role)
+                    .Include(s => s.User) // Load thông tin User
                     .FirstOrDefaultAsync(s => s.StaffId == staffId);
 
                 if (staff == null)
@@ -210,12 +212,13 @@ namespace VaccineChildren.Application.Services.Impl
                 }
 
                 var staffRes = _mapper.Map<StaffRes>(staff);
-
-                // Lấy Username & Password từ User
+                
                 if (staff.User != null)
                 {
-                    staffRes.Username = staff.User.UserName;
-                    staffRes.Password = staff.User.Password; // Nếu cần giải mã, gọi _rsaService.Decrypt()
+                    staffRes.FullName = staff.User.FullName;
+                    staffRes.Email = staff.User.Email;
+                    staffRes.Phone = staff.User.Phone;
+                    staffRes.Address = staff.User.Address;
                 }
 
                 return staffRes;
@@ -237,14 +240,16 @@ namespace VaccineChildren.Application.Services.Impl
             try
             {
                 _logger.LogInformation("Retrieving all staff, including inactive staff");
+
                 var staffRepository = _unitOfWork.GetRepository<Staff>();
+
                 var staffList = await staffRepository.Entities
-                            .Include(s => s.User)
-                            .Include(s => s.Role)
-                            .Where(s => s.Role.RoleName.ToLower() == StaticEnum.RoleEnum.Staff.ToString().ToLower())
-                            .OrderByDescending(s => s.Status.ToLower() == StaticEnum.StatusEnum.Active.ToString().ToLower())
-                            .ThenBy(s => s.Status)
-                            .ToListAsync();
+                                .Include(s => s.User) // Load thông tin User
+                                .ThenInclude(u => u.Role) // Load thông tin Role
+                                .Where(s => s.User.Role.RoleName.ToLower() == StaticEnum.RoleEnum.Staff.ToString().ToLower())
+                                .OrderByDescending(s => s.Status == StaticEnum.StatusEnum.Active.ToString())
+                                .ThenBy(s => s.Status)
+                                .ToListAsync();
 
                 if (!staffList.Any())
                 {
@@ -252,17 +257,8 @@ namespace VaccineChildren.Application.Services.Impl
                     return new List<StaffRes>();
                 }
 
+                // Dùng AutoMapper để map trực tiếp thay vì vòng lặp thủ công
                 var staffResList = _mapper.Map<List<StaffRes>>(staffList);
-
-                // Gán Username & Password
-                for (int i = 0; i < staffList.Count; i++)
-                {
-                    if (staffList[i].User != null)
-                    {
-                        staffResList[i].Username = staffList[i].User.UserName;
-                        staffResList[i].Password = staffList[i].User.Password; // Nếu cần giải mã, gọi _rsaService.Decrypt()
-                    }
-                }
 
                 return staffResList;
             }

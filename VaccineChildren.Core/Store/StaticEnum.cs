@@ -47,4 +47,9 @@ public static class StaticEnum
         [CustomName("VN Pay")] VnPay,
     }
     
+    public enum ScheduleStatusEnum
+    {
+        [CustomName("upcoming")] Upcoming,
+        [CustomName("completed")] Completed,
+    }
 }
