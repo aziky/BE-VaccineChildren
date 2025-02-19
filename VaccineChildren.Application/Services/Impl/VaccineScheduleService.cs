@@ -24,7 +24,10 @@ public class VaccineScheduleService : IVaccineScheduleService
 
         // Get all matching schedules
         var schedules = await scheduleRepository.GetAllAsync();
-        var filteredSchedules = schedules.Where(s => s.ScheduleDate >= fromDate || s.ActualDate == null).ToList();
+        var filteredSchedules = schedules
+            .Where(s => s.ScheduleDate >= fromDate || s.ActualDate == null)
+            .OrderBy(s => s.ScheduleDate)
+            .ToList();
 
         var result = new List<VaccineScheduleRes>();
 
@@ -39,14 +42,15 @@ public class VaccineScheduleService : IVaccineScheduleService
             var scheduleStatus = schedule.ActualDate.HasValue
                 ? StaticEnum.ScheduleStatusEnum.Completed.ToString()
                 : StaticEnum.ScheduleStatusEnum.Upcoming.ToString();
-
+            
             result.Add(new VaccineScheduleRes
             {
                 ChildrenName = child.FullName,
                 VaccineName = schedule.VaccineType,
-                ScheduleDate = schedule.ScheduleDate,
+                ScheduleDate = string.Format("{0:dd-MM-yyyy HH:mm}", schedule.ScheduleDate),
                 ScheduleStatus = scheduleStatus,
-                ParentsName = parentName?.FullName ?? "Unknown"
+                ParentsName = parentName?.FullName ?? "Unknown",
+                PhoneNumber = parentName?.Phone
             });
         }
 
