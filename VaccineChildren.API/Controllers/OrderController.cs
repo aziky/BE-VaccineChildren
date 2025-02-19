@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Core.Base;
@@ -7,7 +8,7 @@ namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-// [Authorize (Roles = "user")]
+[Authorize (Roles = "user")]
 public class OrderController :  BaseController
 {
     private readonly ILogger<OrderController> _logger;
