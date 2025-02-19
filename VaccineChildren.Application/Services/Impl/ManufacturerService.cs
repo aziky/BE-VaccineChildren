@@ -82,8 +82,7 @@ namespace VaccineChildren.Application.Services.Impl
                 _logger.LogInformation("Retrieving all manufacturers");
 
                 // Retrieve all manufacturers asynchronously
-                var manufacturers = await _manufacturerRepository.GetAllAsync(query => query
-                    .Where(m => m.IsActive == true));
+                var manufacturers = await _manufacturerRepository.GetAllAsync();
 
                 if (manufacturers == null || manufacturers.Count == 0)
                 {

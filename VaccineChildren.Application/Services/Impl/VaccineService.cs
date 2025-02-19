@@ -141,8 +141,7 @@ namespace VaccineChildren.Application.Services.Impl
             {
                 _logger.LogInformation("Retrieving all vaccines");
 
-                var vaccines = await _vaccineRepository.GetAllAsync(query => query
-                    .Where(v => v.IsActive == true));
+                var vaccines = await _vaccineRepository.GetAllAsync();
                 if (vaccines == null || vaccines.Count == 0)
                 {
                     _logger.LogInformation("No vaccines found");
