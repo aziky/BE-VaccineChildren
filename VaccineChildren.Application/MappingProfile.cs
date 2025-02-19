@@ -39,7 +39,7 @@
         CreateMap<ManufacturerReq, Manufacturer>();
         CreateMap<Manufacturer, ManufacturerRes>();
  
-        CreateMap<CreateOrderReq, Child>()
+        CreateMap<CreateChildReq, Child>()
             .ForMember(dest => dest.Dob, opt => opt.Ignore())
             .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender.ToLower()));
 
@@ -56,6 +56,11 @@
             .ForMember(dest => dest.VaccineId, opt => opt.MapFrom(src => src.VaccineId)) // Map VaccineId if necessary
             .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.Vaccine.VaccineName)); // Assuming Vaccine has a VaccineName property
 
+
+        CreateMap<User, GetUserRes>()
+            .ForMember(dest => dest.ListChildRes, opt => opt.MapFrom(src => src.Children));
+
+        CreateMap<Child, GetChildRes>();
     }
 }
  

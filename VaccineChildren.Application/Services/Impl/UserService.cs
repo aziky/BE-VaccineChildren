@@ -1,22 +1,24 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
+using VaccineChildren.Core.Store;
 using VaccineChildren.Domain.Abstraction;
 using VaccineChildren.Domain.Entities;
-using VaccineChildren.Core.Store;
-using VaccineChildren.Application.Services;
 
 namespace VaccineChildren.Application.Services.Impl;
 
 public class UserService : IUserService
 {
+    private const string DateFormat = "dd-MM-yyyy";
+    
     private readonly ILogger<IUserService> _logger;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
@@ -152,25 +154,6 @@ public class UserService : IUserService
         return decryptedPassword != null && inputPassword == decryptedPassword;
     }
 
-    // private string GenerateJwtToken(User user)
-    // {
-    //     var tokenHandler = new JwtSecurityTokenHandler();
-    //     var key = Encoding.ASCII.GetBytes(_jwtSecret);
-    //
-    //     var tokenDescriptor = new SecurityTokenDescriptor
-    //     {
-    //         Subject = new ClaimsIdentity(new[]
-    //         {
-    //             new Claim(ClaimTypes.Name, user.UserId.ToString()),
-    //             new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "User")
-    //         }),
-    //         Expires = DateTime.UtcNow.AddHours(1),
-    //         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-    //     };
-    //
-    //     var token = tokenHandler.CreateToken(tokenDescriptor);
-    //     return tokenHandler.WriteToken(token);
-    // }
     private string GenerateJwtToken(User user)
     {
         try
@@ -202,5 +185,87 @@ public class UserService : IUserService
             throw new InvalidOperationException("Failed to generate JWT token.", ex);
         }
     }
+    // private string GenerateJwtToken(User user)
+    // {
+    //     return _rsaService.GenerateJwtToken(user.UserId.ToString(), user.Role?.RoleName ?? "User");
+    // }
+    
+     public async Task CreateChildAsync(CreateChildReq request)
+    {
+        try
+        {
+            _logger.LogInformation("Start creating child profile");
+            _unitOfWork.BeginTransaction();
+            var childRepository = _unitOfWork.GetRepository<Child>();
+            var userRepository = _unitOfWork.GetRepository<User>();
+            
+            
+            var user = await userRepository.GetByIdAsync(Guid.Parse(request.UserId));
+            if (user == null)
+            {
+                _logger.LogError("User not found");
+                throw new KeyNotFoundException("User not found");
+            }
 
+            _logger.LogInformation("Start creating child");
+            var child = _mapper.Map<Child>(request);
+            child.Dob = DateOnly.ParseExact(request.Dob, DateFormat, CultureInfo.InvariantCulture);
+            child.CreatedAt = DateTime.Now;
+            child.CreatedBy = user.Email;
+            await childRepository.InsertAsync(child);
+            await _unitOfWork.SaveChangeAsync();
+            _unitOfWork.CommitTransaction();
+            
+            _logger.LogInformation("Child created successfully");
+        }
+        catch (Exception e)
+        {
+            _unitOfWork.RollBack();
+            _logger.LogError("Error at create child async cause by: {Message}", e.Message);
+            throw;
+        }
+        finally
+        {
+            _unitOfWork.Dispose();
+        }
+    }
+
+    public async Task<GetChildRes> GetChildByChildIdAsync(string childId)
+    {
+        try
+        {
+            _logger.LogInformation("Start getting child profile");
+            
+            var childRepository = _unitOfWork.GetRepository<Child>();
+            var child = await childRepository.GetByIdNoTracking(Guid.Parse(childId));
+            if (child == null) throw new KeyNotFoundException("Child not found");
+            
+            return _mapper.Map<GetChildRes>(child);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Error at get child async cause by: {}", e.Message);
+            throw;
+        }
+    }
+
+    public async Task<GetUserRes> GetUserByUserIdAsync(string userId)
+    {
+        try
+        {
+            _logger.LogInformation("Start get user profile");
+            var userRepository = _unitOfWork.GetRepository<User>();
+            var user = await userRepository.GetAllAsync(query => query.Include(u => u.Children)
+                    .Where(u => u.UserId.ToString().Equals(userId)));
+
+            
+            return _mapper.Map<GetUserRes>(user.FirstOrDefault());
+            
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Error at get user by user id async cause by: {}", e.Message);
+            throw;
+        }
+    }
 }

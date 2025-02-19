@@ -9,8 +9,7 @@ namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
-// [Authorize (Roles = "User, Admin")]
+[Authorize (Roles = "user")]
 public class UserController : BaseController
 {
     private readonly ILogger<UserController> _logger;
@@ -58,5 +57,52 @@ public class UserController : BaseController
             return HandleException(ex, nameof(UserController));
         }
     }
+
+    [HttpPost("child")]
+    public async Task<IActionResult> CreateChildAsync([FromBody] CreateChildReq request)
+    {
+        try
+        {
+            await _userService.CreateChildAsync(request);
+            return Ok(BaseResponse<string>.CreateResponse("Child created successfully"));
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Error at create child async cause by {}",  e.Message);
+            return HandleException(e, nameof(UserController));
+        }
+    }
+
+    [HttpGet("child/{childId}")]
+    public async Task<IActionResult> GetChildAsync([FromRoute] string childId)
+    {
+        try
+        {
+            var childRes = await _userService.GetChildByChildIdAsync(childId);
+            return Ok(BaseResponse<GetChildRes>.OkResponse(childRes, "child profile"));
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Error at get child async cause by {}",  e.Message);
+            return HandleException(e, nameof(UserController));
+        }
+    }
+    
+    
+    [HttpGet("{userId}")]
+    public async Task<IActionResult> GetListChildByUserIdAsync([FromRoute] string userId)
+    {
+        try
+        {
+            var userProfile = await _userService.GetUserByUserIdAsync(userId);
+            return Ok(BaseResponse<GetUserRes>.OkResponse(userProfile, "get user profile successfully"));
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Error at get child async cause by {}",  e.Message);
+            return HandleException(e, nameof(UserController));
+        }
+    }
+    
     
 }

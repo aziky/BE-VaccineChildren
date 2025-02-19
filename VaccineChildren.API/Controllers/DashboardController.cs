@@ -4,13 +4,12 @@ using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Core.Base;
 using VaccineChildren.Core.Exceptions;
-using VaccineChildren.Core.Store;
 
 namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-// [Authorize (Roles = "admin")]
+[Authorize (Roles = "admin")]
 public class DashboardController : BaseController
 {
     private readonly ILogger<DashboardController> _logger;
