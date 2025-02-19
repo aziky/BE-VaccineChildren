@@ -212,9 +212,10 @@ namespace VaccineChildren.Application.Services.Impl
                 }
 
                 var staffRes = _mapper.Map<StaffRes>(staff);
-                
+        
                 if (staff.User != null)
                 {
+                    staffRes.UserName = staff.User.UserName;
                     staffRes.FullName = staff.User.FullName;
                     staffRes.Email = staff.User.Email;
                     staffRes.Phone = staff.User.Phone;
@@ -234,7 +235,7 @@ namespace VaccineChildren.Application.Services.Impl
             }
         }
 
-
+        
         public async Task<List<StaffRes>> GetAllStaff()
         {
             try
@@ -244,12 +245,12 @@ namespace VaccineChildren.Application.Services.Impl
                 var staffRepository = _unitOfWork.GetRepository<Staff>();
 
                 var staffList = await staffRepository.Entities
-                                .Include(s => s.User) // Load thông tin User
-                                .ThenInclude(u => u.Role) // Load thông tin Role
-                                .Where(s => s.User.Role.RoleName.ToLower() == StaticEnum.RoleEnum.Staff.ToString().ToLower())
-                                .OrderByDescending(s => s.Status == StaticEnum.StatusEnum.Active.ToString())
-                                .ThenBy(s => s.Status)
-                                .ToListAsync();
+                    .Include(s => s.User) // Load thông tin User
+                    .ThenInclude(u => u.Role) // Load thông tin Role
+                    .Where(s => s.User.Role.RoleName.ToLower() == StaticEnum.RoleEnum.Staff.ToString().ToLower())
+                    .OrderByDescending(s => s.Status == StaticEnum.StatusEnum.Active.ToString())
+                    .ThenBy(s => s.Status)
+                    .ToListAsync();
 
                 if (!staffList.Any())
                 {
@@ -257,8 +258,10 @@ namespace VaccineChildren.Application.Services.Impl
                     return new List<StaffRes>();
                 }
 
-                // Dùng AutoMapper để map trực tiếp thay vì vòng lặp thủ công
                 var staffResList = _mapper.Map<List<StaffRes>>(staffList);
+        
+                // Gán thêm UserName
+                staffResList.ForEach(staff => staff.UserName = staffList.First(s => s.StaffId == Guid.Parse(staff.StaffId)).User?.UserName);
 
                 return staffResList;
             }
@@ -272,6 +275,7 @@ namespace VaccineChildren.Application.Services.Impl
                 _unitOfWork.Dispose();
             }
         }
+
 
     }
 }
