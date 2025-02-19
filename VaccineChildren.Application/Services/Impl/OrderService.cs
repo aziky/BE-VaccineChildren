@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using VaccineChildren.Application.DTOs.Request;
@@ -11,16 +10,13 @@ namespace VaccineChildren.Application.Services.Impl;
 
 public class OrderService : IOrderService
 {
-    private const string DateFormat = "dd-MM-yyyy";
     private readonly ILogger<OrderService> _logger;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
 
-    public OrderService(ILogger<OrderService> logger, IUnitOfWork unitOfWork, IMapper mapper)
+    public OrderService(ILogger<OrderService> logger, IUnitOfWork unitOfWork)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
     }
 
     public async Task CreateOrderAsync(CreateOrderReq request)
@@ -43,14 +39,8 @@ public class OrderService : IOrderService
                 _logger.LogError("User not found");
                 throw new KeyNotFoundException("User not found");
             }
-
-            _logger.LogInformation("Start creating child");
-            var child = _mapper.Map<Child>(request);
-            child.Dob = DateOnly.ParseExact(request.Dob, DateFormat, CultureInfo.InvariantCulture);
-            child.CreatedAt = DateTime.Now;
-            child.CreatedBy = user.Email;
             
-            user.Children.Add(await childRepository.InsertAsync(child));
+            var child = await childRepository.GetByIdAsync(Guid.Parse(request.ChildId));
 
             _logger.LogInformation("Start creating order");
             

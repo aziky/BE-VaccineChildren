@@ -4,7 +4,6 @@ using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Core.Base;
 using VaccineChildren.Core.Exceptions;
-using VaccineChildren.Core.Store;
 
 namespace VaccineChildren.API.Controllers;
 
