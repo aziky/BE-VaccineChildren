@@ -185,10 +185,6 @@ public class UserService : IUserService
             throw new InvalidOperationException("Failed to generate JWT token.", ex);
         }
     }
-    // private string GenerateJwtToken(User user)
-    // {
-    //     return _rsaService.GenerateJwtToken(user.UserId.ToString(), user.Role?.RoleName ?? "User");
-    // }
     
      public async Task CreateChildAsync(CreateChildReq request)
     {
