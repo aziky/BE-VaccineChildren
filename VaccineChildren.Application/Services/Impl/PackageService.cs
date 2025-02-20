@@ -89,9 +89,8 @@
             {
                 _logger.LogInformation("Retrieving all packages");
                 var packages = await _packageRepository.GetAllAsync(includeProperties: "Vaccines");
-
-                var activePackages = packages.Where(p => p.IsActive.Equals(true)).ToList();
-                return _mapper.Map<List<PackageRes>>(activePackages);
+                
+                return _mapper.Map<List<PackageRes>>(packages);
             }
             catch (Exception ex)
             {
