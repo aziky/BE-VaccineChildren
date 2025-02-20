@@ -33,34 +33,26 @@
             {
                 _logger.LogInformation("Creating new package");
 
-                // Tạo mới package từ packageReq
                 var package = _mapper.Map<Package>(packageReq);
-                package.PackageId = Guid.NewGuid(); // Tạo PackageId mới
+                package.PackageId = Guid.NewGuid();
                 package.CreatedAt = DateTime.UtcNow.ToLocalTime();
                 package.IsActive = true;
 
                 decimal totalVaccinePrice = 0;
 
-                // Kiểm tra vaccineIds và tính tổng giá trị vaccine
                 if (packageReq.VaccineIds != null && packageReq.VaccineIds.Any())
                 {
-                    // Lấy thông tin các Vaccine liên quan
                     var vaccines = await _vaccineRepository.GetAllAsync("VaccineManufactures");
                     vaccines = vaccines.Where(v => packageReq.VaccineIds.Contains(v.VaccineId)).ToList();
                     totalVaccinePrice = vaccines.Sum(v => v.VaccineManufactures.Sum(vm => vm.Price ?? 0));
-
-                    // Gán các Vaccine vào Package
                     package.Vaccines = vaccines;
                 }
 
-                // Tính toán lại giá trị package sau khi áp dụng discount
                 package.Price = totalVaccinePrice * (1 - (packageReq.Discount / 100));
 
-                // Lưu package vào bảng
                 await _packageRepository.InsertAsync(package);
                 await _unitOfWork.SaveChangeAsync();
 
-                // Commit transaction
                 _unitOfWork.CommitTransaction();
                 _logger.LogInformation("Package created successfully");
             }
@@ -117,36 +109,24 @@
                 _logger.LogInformation("Updating package with ID: {PackageId}", packageId);
                 var package = await _packageRepository.FindAsync(p => p.PackageId == packageId, "Vaccines");
                 if (package == null) throw new KeyNotFoundException("Package not found");
-        
-                // Cập nhật thông tin cơ bản
+
                 _mapper.Map(packageReq, package);
                 package.UpdatedAt = DateTime.UtcNow.ToLocalTime();
-        
-                // Xử lý VaccineIds
+
+                decimal totalVaccinePrice = 0;
                 if (packageReq.VaccineIds != null)
                 {
-                    // Lấy danh sách vaccine hiện tại
-                    var existingVaccineIds = package.Vaccines.Select(v => v.VaccineId).ToList();
-        
-                    // Tìm các vaccine cần thêm mới
-                    var vaccinesToAdd = packageReq.VaccineIds.Except(existingVaccineIds).ToList();
-                    foreach (var vaccineId in vaccinesToAdd)
-                    {
-                        var vaccine = await _vaccineRepository.GetByIdAsync(vaccineId);
-                        if (vaccine != null)
-                        {
-                            package.Vaccines.Add(vaccine);
-                        }
-                    }
-        
-                    // Tìm các vaccine cần xóa
-                    var vaccinesToRemove = existingVaccineIds.Except(packageReq.VaccineIds).ToList();
-                    package.Vaccines = package.Vaccines.Where(v => !vaccinesToRemove.Contains(v.VaccineId)).ToList();
+                    var vaccines = await _vaccineRepository.GetAllAsync("VaccineManufactures");
+                    vaccines = vaccines.Where(v => packageReq.VaccineIds.Contains(v.VaccineId)).ToList();
+                    totalVaccinePrice = vaccines.Sum(v => v.VaccineManufactures.Sum(vm => vm.Price ?? 0));
+                    package.Vaccines = vaccines;
                 }
-        
+
+                package.Price = totalVaccinePrice * (1 - (packageReq.Discount / 100));
+
                 await _packageRepository.UpdateAsync(package);
                 await _unitOfWork.SaveChangeAsync();
-        
+
                 _unitOfWork.CommitTransaction();
                 _logger.LogInformation("Package updated successfully");
             }
@@ -157,7 +137,6 @@
                 throw;
             }
         }
-
 
         public async Task DeletePackage(Guid packageId)
         {
