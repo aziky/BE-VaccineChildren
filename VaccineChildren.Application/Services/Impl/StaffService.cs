@@ -136,64 +136,65 @@ namespace VaccineChildren.Application.Services.Impl
         }
 
         public async Task UpdateStaff(Guid staffId, StaffReq staffReq)
+{
+    try
+    {
+        _logger.LogInformation("Updating staff with ID: {StaffId}", staffId);
+        _unitOfWork.BeginTransaction();
+
+        var staffRepository = _unitOfWork.GetRepository<Staff>();
+        var staff = await staffRepository.GetByIdAsync(staffId);
+
+        if (staff == null)
         {
-            try
-            {
-                _logger.LogInformation("Updating staff with ID: {StaffId}", staffId);
-                _unitOfWork.BeginTransaction();
-
-                var staffRepository = _unitOfWork.GetRepository<Staff>();
-                var staff = await staffRepository.GetByIdAsync(staffId);
-
-                if (staff == null)
-                {
-                    _logger.LogWarning("Staff not found with ID: {StaffId}", staffId);
-                    throw new KeyNotFoundException("Staff not found");
-                }
-
-                // Vì StaffId trùng với UserId, ta có thể dùng staffId để lấy thông tin User
-                var userRepository = _unitOfWork.GetRepository<User>();
-                var user = await userRepository.GetByIdAsync(staffId);
-
-                if (user == null)
-                {
-                    _logger.LogWarning("User associated with staff not found for ID: {StaffId}", staffId);
-                    throw new KeyNotFoundException("User associated with staff not found");
-                }
-
-                // Cập nhật thông tin Staff
-                staff.Gender = staffReq.Gender;
-                staff.Dob = staffReq.Dob;
-                staff.BloodType = staffReq.BloodType;
-                staff.UpdatedAt = DateTime.UtcNow.ToLocalTime();
-
-                // Cập nhật thông tin User
-                user.FullName = staffReq.FullName;
-                user.Phone = staffReq.Phone;
-                user.Email = staffReq.Email;
-                user.Address = staffReq.Address;
-                user.UpdatedAt = DateTime.UtcNow.ToLocalTime();
-
-                // Lưu thay đổi
-                await staffRepository.UpdateAsync(staff);
-                await userRepository.UpdateAsync(user);
-                await _unitOfWork.SaveChangeAsync();
-
-                // Commit transaction
-                _unitOfWork.CommitTransaction();
-                _logger.LogInformation("Staff updated successfully with ID: {StaffId}", staffId);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError("Error while updating staff (ID: {StaffId}): {Error}", staffId, e.Message);
-                _unitOfWork.RollBack();
-                throw;
-            }
-            finally
-            {
-                _unitOfWork.Dispose();
-            }
+            _logger.LogWarning("Staff not found with ID: {StaffId}", staffId);
+            throw new KeyNotFoundException("Staff not found");
         }
+
+        // Vì StaffId trùng với UserId, ta có thể dùng staffId để lấy thông tin User
+        var userRepository = _unitOfWork.GetRepository<User>();
+        var user = await userRepository.GetByIdAsync(staffId);
+
+        if (user == null)
+        {
+            _logger.LogWarning("User associated with staff not found for ID: {StaffId}", staffId);
+            throw new KeyNotFoundException("User associated with staff not found");
+        }
+
+        // Cập nhật thông tin Staff
+        staff.Gender = staffReq.Gender;
+        staff.Dob = staffReq.Dob;
+        staff.BloodType = staffReq.BloodType;
+        staff.UpdatedAt = DateTime.UtcNow.ToLocalTime();
+
+        // Cập nhật thông tin User (bỏ qua password)
+        user.FullName = staffReq.FullName;
+        user.Phone = staffReq.Phone;
+        user.Email = staffReq.Email;
+        user.Address = staffReq.Address;
+        user.UpdatedAt = DateTime.UtcNow.ToLocalTime();
+
+        // Lưu thay đổi
+        await staffRepository.UpdateAsync(staff);
+        await userRepository.UpdateAsync(user);
+        await _unitOfWork.SaveChangeAsync();
+
+        // Commit transaction
+        _unitOfWork.CommitTransaction();
+        _logger.LogInformation("Staff updated successfully with ID: {StaffId}", staffId);
+    }
+    catch (Exception e)
+    {
+        _logger.LogError("Error while updating staff (ID: {StaffId}): {Error}", staffId, e.Message);
+        _unitOfWork.RollBack();
+        throw;
+    }
+    finally
+    {
+        _unitOfWork.Dispose();
+    }
+}
+
 
         public async Task<StaffRes> GetStaffById(Guid staffId)
         {
