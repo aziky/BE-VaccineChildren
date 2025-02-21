@@ -3,6 +3,7 @@ using VaccineChildren.Application.DTOs.Response;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VaccineChildren.Domain.Entities;
 
 namespace VaccineChildren.Application.Services
 {
@@ -14,5 +15,6 @@ namespace VaccineChildren.Application.Services
         Task UpdateVaccine(Guid vaccineId, VaccineReq vaccineReq);
         Task DeleteVaccine(Guid vaccineId);
         Task<IEnumerable<VaccineRes>> GetAllVaccinesForEachAge(int minAge, int maxAge, string unit);
+
     }
 }

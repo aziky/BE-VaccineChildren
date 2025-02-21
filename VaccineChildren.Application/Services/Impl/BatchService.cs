@@ -101,8 +101,7 @@ public class BatchService : IBatchService
         {
             _logger.LogInformation("Retrieving all batches");
 
-            var batches = await _batchRepository.GetAllAsync(query => query
-                .Where(b => b.IsActive == true));
+            var batches = await _batchRepository.GetAllAsync();
 
             if (batches == null || batches.Count == 0)
             {
