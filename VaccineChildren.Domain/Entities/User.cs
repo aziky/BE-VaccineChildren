@@ -28,9 +28,9 @@ public partial class User
     public DateTime? UpdatedAt { get; set; }
 
     public string? UpdatedBy { get; set; }
-    public bool IsVerified { get; set; }
-    public string EmailVerificationToken { get; set; }
-    public DateTime TokenExpiry { get; set; }
+    public bool? IsVerified { get; set; }
+    public string? EmailVerificationToken { get; set; }
+    public DateTime? TokenExpiry { get; set; }
 
     public virtual ICollection<Child> Children { get; set; } = new List<Child>();
 

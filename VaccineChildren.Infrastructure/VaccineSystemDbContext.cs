@@ -383,7 +383,9 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
-
+            entity.Property(e=>e.MaxAge).HasColumnName("max_age");
+            entity.Property(e=>e.MinAge).HasColumnName("min_age");
+            entity.Property(e=>e.Unit).HasColumnName("unit");
             entity.HasMany(d => d.Vaccines)
                 .WithMany(p => p.Packages)
                 .UsingEntity<Dictionary<string, object>>(

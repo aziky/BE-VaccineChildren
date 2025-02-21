@@ -811,7 +811,6 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("email");
 
                     b.Property<string>("EmailVerificationToken")
-                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("email_verification_token");
@@ -821,7 +820,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("full_name");
 
-                    b.Property<bool>("IsVerified")
+                    b.Property<bool?>("IsVerified")
                         .HasColumnType("boolean")
                         .HasColumnName("is_verified");
 
@@ -840,7 +839,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("role_id");
 
-                    b.Property<DateTime>("TokenExpiry")
+                    b.Property<DateTime?>("TokenExpiry")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("token_expiry");
 
