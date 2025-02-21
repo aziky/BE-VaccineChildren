@@ -81,7 +81,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("batch_id");
 
                     b.Property<DateTime?>("ExpirationDate")
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("expiration_date");
 
                     b.Property<bool?>("IsActive")
@@ -89,15 +89,12 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("is_active");
 
                     b.Property<DateTime?>("ProductionDate")
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("production_date");
 
                     b.Property<int?>("Quantity")
                         .HasColumnType("integer")
                         .HasColumnName("quantity");
-
-                    b.Property<string>("TestColumn")
-                        .HasColumnType("text");
 
                     b.Property<Guid?>("VaccineId")
                         .HasColumnType("uuid")
@@ -813,10 +810,20 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("email");
 
+                    b.Property<string>("EmailVerificationToken")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("email_verification_token");
+
                     b.Property<string>("FullName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("full_name");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_verified");
 
                     b.Property<string>("Password")
                         .IsRequired()
@@ -832,6 +839,10 @@ namespace VaccineChildren.Infrastructure.Migrations
                     b.Property<int?>("RoleId")
                         .HasColumnType("integer")
                         .HasColumnName("role_id");
+
+                    b.Property<DateTime>("TokenExpiry")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("token_expiry");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp without time zone")
