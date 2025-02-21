@@ -52,4 +52,22 @@ public static class StaticEnum
         [CustomName("upcoming")] Upcoming,
         [CustomName("completed")] Completed,
     }
+    public enum EmailTemplateEnum
+    {
+        [CustomName("Email Verification")]
+        [CustomId(1)]
+        EmailVerification,
+
+        [CustomName("Password Reset")]
+        [CustomId(2)]
+        PasswordReset,
+
+        [CustomName("Vaccination Reminder")]
+        [CustomId(3)]
+        VaccinationReminder,
+
+        [CustomName("Appointment Confirmation")]
+        [CustomId(4)]
+        AppointmentConfirmation
+    }
 }

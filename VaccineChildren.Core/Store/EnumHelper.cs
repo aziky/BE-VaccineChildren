@@ -19,4 +19,10 @@ public static class EnumHelper
 
         return (attr as CustomName)?.Name ?? string.Empty;
     }
+    public static int Id(this Enum value)
+    {
+        var field = value.GetType().GetField(value.ToString());
+        var attribute = field?.GetCustomAttribute<CustomId>();
+        return attribute?.Id ?? 0;
+    }
 }

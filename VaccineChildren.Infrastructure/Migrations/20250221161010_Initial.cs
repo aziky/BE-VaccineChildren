@@ -28,10 +28,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     updated_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true)
                 },
-                constraints: table =>
-                {
-                    table.PrimaryKey("manufacturers_pkey", x => x.manufacturer_id);
-                });
+                constraints: table => { table.PrimaryKey("manufacturers_pkey", x => x.manufacturer_id); });
 
             migrationBuilder.CreateTable(
                 name: "packages",
@@ -51,17 +48,15 @@ namespace VaccineChildren.Infrastructure.Migrations
                     updated_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     updated_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true)
                 },
-                constraints: table =>
-                {
-                    table.PrimaryKey("packages_pkey", x => x.package_id);
-                });
+                constraints: table => { table.PrimaryKey("packages_pkey", x => x.package_id); });
 
             migrationBuilder.CreateTable(
                 name: "roles",
                 columns: table => new
                 {
                     role_id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
+                        .Annotation("Npgsql:ValueGenerationStrategy",
+                            NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
                     role_name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     description = table.Column<string>(type: "text", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
@@ -69,17 +64,15 @@ namespace VaccineChildren.Infrastructure.Migrations
                     updated_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     updated_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true)
                 },
-                constraints: table =>
-                {
-                    table.PrimaryKey("roles_pkey", x => x.role_id);
-                });
+                constraints: table => { table.PrimaryKey("roles_pkey", x => x.role_id); });
 
             migrationBuilder.CreateTable(
                 name: "template",
                 columns: table => new
                 {
                     template_id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                        .Annotation("Npgsql:ValueGenerationStrategy",
+                            NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     subject = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     temaplate = table.Column<string>(type: "text", nullable: true),
@@ -89,10 +82,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                     updated_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     updated_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true)
                 },
-                constraints: table =>
-                {
-                    table.PrimaryKey("template_pkey", x => x.template_id);
-                });
+                constraints: table => { table.PrimaryKey("template_pkey", x => x.template_id); });
 
             migrationBuilder.CreateTable(
                 name: "vaccine",
@@ -113,10 +103,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                     updated_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     updated_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true)
                 },
-                constraints: table =>
-                {
-                    table.PrimaryKey("vaccine_pkey", x => x.vaccine_id);
-                });
+                constraints: table => { table.PrimaryKey("vaccine_pkey", x => x.vaccine_id); });
 
             migrationBuilder.CreateTable(
                 name: "users",
@@ -133,7 +120,11 @@ namespace VaccineChildren.Infrastructure.Migrations
                     created_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     created_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
-                    updated_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true)
+                    updated_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    is_verified = table.Column<bool>(type: "boolean", nullable: false),
+                    email_verification_token =
+                        table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    token_expiry = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -142,28 +133,29 @@ namespace VaccineChildren.Infrastructure.Migrations
                         name: "users_role_id_fkey",
                         column: x => x.role_id,
                         principalTable: "roles",
-                        principalColumn: "role_id");
+                        principalColumn: "role_id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
                 name: "package_vaccine",
                 columns: table => new
                 {
-                    package_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    vaccine_id = table.Column<Guid>(type: "uuid", nullable: false)
+                    PackageId = table.Column<Guid>(type: "uuid", nullable: false),
+                    VaccineId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("package_vaccine_pkey", x => new { x.package_id, x.vaccine_id });
+                    table.PrimaryKey("package_vaccine_pkey", x => new { x.PackageId, x.VaccineId });
                     table.ForeignKey(
-                        name: "package_vaccine_package_id_fkey",
-                        column: x => x.package_id,
+                        name: "FK_package_vaccine_packages_PackageId",
+                        column: x => x.PackageId,
                         principalTable: "packages",
                         principalColumn: "package_id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "package_vaccine_service_id_fkey",
-                        column: x => x.vaccine_id,
+                        name: "FK_package_vaccine_vaccine_VaccineId",
+                        column: x => x.VaccineId,
                         principalTable: "vaccine",
                         principalColumn: "vaccine_id",
                         onDelete: ReferentialAction.Cascade);
@@ -219,7 +211,8 @@ namespace VaccineChildren.Infrastructure.Migrations
                         name: "children_user_id_fkey",
                         column: x => x.user_id,
                         principalTable: "users",
-                        principalColumn: "user_id");
+                        principalColumn: "user_id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -244,7 +237,8 @@ namespace VaccineChildren.Infrastructure.Migrations
                         name: "FK_staff_roles_RoleId",
                         column: x => x.RoleId,
                         principalTable: "roles",
-                        principalColumn: "role_id");
+                        principalColumn: "role_id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_staff_users_staff_id",
                         column: x => x.staff_id,
@@ -259,10 +253,9 @@ namespace VaccineChildren.Infrastructure.Migrations
                 {
                     batch_id = table.Column<Guid>(type: "uuid", nullable: false),
                     vaccine_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    production_date = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
-                    TestColumn = table.Column<string>(type: "text", nullable: true),
+                    production_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     quantity = table.Column<int>(type: "integer", nullable: true),
-                    expiration_date = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    expiration_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     is_active = table.Column<bool>(type: "boolean", nullable: true)
                 },
                 constraints: table =>
@@ -272,7 +265,8 @@ namespace VaccineChildren.Infrastructure.Migrations
                         name: "batch_vaccine_id_fkey",
                         column: x => x.vaccine_id,
                         principalTable: "vaccine_manufactures",
-                        principalColumn: "vaccine_id");
+                        principalColumn: "vaccine_id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -296,17 +290,20 @@ namespace VaccineChildren.Infrastructure.Migrations
                         name: "notifications_child_id_fkey",
                         column: x => x.child_id,
                         principalTable: "children",
-                        principalColumn: "child_id");
+                        principalColumn: "child_id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "notifications_template_id_fkey",
                         column: x => x.template_id,
                         principalTable: "template",
-                        principalColumn: "template_id");
+                        principalColumn: "template_id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "notifications_user_id_fkey",
                         column: x => x.user_id,
                         principalTable: "users",
-                        principalColumn: "user_id");
+                        principalColumn: "user_id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -361,7 +358,8 @@ namespace VaccineChildren.Infrastructure.Migrations
                         name: "holidays_modified_by_fkey",
                         column: x => x.modified_by,
                         principalTable: "staff",
-                        principalColumn: "staff_id");
+                        principalColumn: "staff_id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -389,12 +387,14 @@ namespace VaccineChildren.Infrastructure.Migrations
                         name: "orders_approved_staff_fkey",
                         column: x => x.approved_staff,
                         principalTable: "staff",
-                        principalColumn: "staff_id");
+                        principalColumn: "staff_id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "orders_child_id_fkey",
                         column: x => x.child_id,
                         principalTable: "children",
-                        principalColumn: "child_id");
+                        principalColumn: "child_id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -418,12 +418,14 @@ namespace VaccineChildren.Infrastructure.Migrations
                         name: "feedback_order_id_fkey",
                         column: x => x.order_id,
                         principalTable: "orders",
-                        principalColumn: "order_id");
+                        principalColumn: "order_id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "feedback_user_id_fkey",
                         column: x => x.user_id,
                         principalTable: "users",
-                        principalColumn: "user_id");
+                        principalColumn: "user_id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -482,7 +484,8 @@ namespace VaccineChildren.Infrastructure.Migrations
                     order_id = table.Column<Guid>(type: "uuid", nullable: true),
                     user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     amount = table.Column<decimal>(type: "numeric(10,2)", precision: 10, scale: 2, nullable: true),
-                    payment_method = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    payment_method =
+                        table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     payment_status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     payment_date = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
@@ -497,12 +500,14 @@ namespace VaccineChildren.Infrastructure.Migrations
                         name: "payments_order_id_fkey",
                         column: x => x.order_id,
                         principalTable: "orders",
-                        principalColumn: "order_id");
+                        principalColumn: "order_id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "payments_user_id_fkey",
                         column: x => x.user_id,
                         principalTable: "users",
-                        principalColumn: "user_id");
+                        principalColumn: "user_id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -529,17 +534,20 @@ namespace VaccineChildren.Infrastructure.Migrations
                         name: "schedule_administered_by_fkey",
                         column: x => x.administered_by,
                         principalTable: "staff",
-                        principalColumn: "staff_id");
+                        principalColumn: "staff_id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "schedule_child_id_fkey",
                         column: x => x.child_id,
                         principalTable: "children",
-                        principalColumn: "child_id");
+                        principalColumn: "child_id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "schedule_order_id_fkey",
                         column: x => x.order_id,
                         principalTable: "orders",
-                        principalColumn: "order_id");
+                        principalColumn: "order_id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -564,131 +572,12 @@ namespace VaccineChildren.Infrastructure.Migrations
                         name: "vaccine_reactions_schedule_id_fkey",
                         column: x => x.schedule_id,
                         principalTable: "schedule",
-                        principalColumn: "schedule_id");
+                        principalColumn: "schedule_id",
+                        onDelete: ReferentialAction.Cascade);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_batch_vaccine_id",
-                table: "batch",
-                column: "vaccine_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_children_user_id",
-                table: "children",
-                column: "user_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_feedback_order_id",
-                table: "feedback",
-                column: "order_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_feedback_user_id",
-                table: "feedback",
-                column: "user_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_holidays_modified_by",
-                table: "holidays",
-                column: "modified_by");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_notifications_child_id",
-                table: "notifications",
-                column: "child_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_notifications_template_id",
-                table: "notifications",
-                column: "template_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_notifications_user_id",
-                table: "notifications",
-                column: "user_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_order_package_package_id",
-                table: "order_package",
-                column: "package_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_order_vaccine_vaccine_id",
-                table: "order_vaccine",
-                column: "vaccine_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_orders_approved_staff",
-                table: "orders",
-                column: "approved_staff");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_orders_child_id",
-                table: "orders",
-                column: "child_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_package_vaccine_vaccine_id",
-                table: "package_vaccine",
-                column: "vaccine_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_payments_user_id",
-                table: "payments",
-                column: "user_id");
-
-            migrationBuilder.CreateIndex(
-                name: "payments_order_id_key",
-                table: "payments",
-                column: "order_id",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_schedule_administered_by",
-                table: "schedule",
-                column: "administered_by");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_schedule_child_id",
-                table: "schedule",
-                column: "child_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_schedule_order_id",
-                table: "schedule",
-                column: "order_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_staff_RoleId",
-                table: "staff",
-                column: "RoleId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_user_cart_package_id",
-                table: "user_cart",
-                column: "package_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_user_cart_vaccine_id",
-                table: "user_cart",
-                column: "vaccine_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_users_role_id",
-                table: "users",
-                column: "role_id");
-
-            migrationBuilder.CreateIndex(
-                name: "vaccine_manufactures_vaccine_id_key",
-                table: "vaccine_manufactures",
-                column: "vaccine_id",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_vaccine_reactions_schedule_id",
-                table: "vaccine_reactions",
-                column: "schedule_id");
         }
+
+
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)

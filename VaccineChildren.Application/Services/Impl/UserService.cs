@@ -25,8 +25,10 @@ public class UserService : IUserService
     private readonly string _jwtSecret;
     private readonly IRsaService _rsaService;
     private readonly ICacheService _cacheService;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    public UserService(ILogger<IUserService> logger, IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IRsaService rsaService, ICacheService cacheService)
+    public UserService(ILogger<IUserService> logger, IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IRsaService rsaService, ICacheService cacheService, IEmailService emailService)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
@@ -34,77 +36,181 @@ public class UserService : IUserService
         _jwtSecret = configuration["Jwt:Secret"];
         _rsaService = rsaService;
         _cacheService = cacheService;
+        _emailService = emailService;
+        _configuration = configuration;
     }
+    // public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest)
+    // {
+    //     try
+    //     {
+    //         _logger.LogInformation("Start registering user");
+    //         _unitOfWork.BeginTransaction();
+    //
+    //         var userRepository = _unitOfWork.GetRepository<User>();
+    //
+    //         // Check if email already exists
+    //         var existingUser = await userRepository.FindByConditionAsync(u => u.Email == registerRequest.Email);
+    //
+    //         if (existingUser != null)
+    //         {
+    //             _logger.LogWarning("Email already exists: {Email}", registerRequest.Email);
+    //             return new RegisterResponse
+    //             {
+    //                 Success = false,
+    //                 Message = "Email already exists"
+    //             };
+    //         }
+    //
+    //         var hashedPassword = _rsaService.Encrypt(registerRequest.Password);
+    //         registerRequest.Password = hashedPassword;
+    //
+    //         // Map request to User entity
+    //         var userEntity = _mapper.Map<User>(registerRequest);
+    //         userEntity.CreatedBy = registerRequest.UserName;
+    //         userEntity.CreatedAt = DateTime.UtcNow.ToLocalTime();
+    //
+    //         // Assign the 'user' role to the new user
+    //         var roleRepository = _unitOfWork.GetRepository<Role>();
+    //         var userRole = await roleRepository.FindByConditionAsync(
+    //             r => r.RoleName.ToLower() == StaticEnum.RoleEnum.User.ToString().ToLower());
+    //         
+    //         if (userRole == null)
+    //         {
+    //             _logger.LogError("User role not found in database");
+    //             return new RegisterResponse
+    //             {
+    //                 Success = false,
+    //                 Message = "Error assigning user role"
+    //             };
+    //         }
+    //
+    //         userEntity.RoleId = userRole.RoleId;
+    //
+    //         await userRepository.InsertAsync(userEntity);
+    //         await _unitOfWork.SaveChangeAsync();
+    //
+    //         _unitOfWork.CommitTransaction();
+    //         _logger.LogInformation("User registration successful");
+    //
+    //         return new RegisterResponse
+    //         {
+    //             Success = true,
+    //             Message = "User registered successfully"
+    //         };
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         _logger.LogError("Error at register user: {Message}", e.Message);
+    //         _unitOfWork.RollBack();
+    //         throw new Exception("An error occurred while registering the user", e);
+    //     }
+    //     finally
+    //     {
+    //         _unitOfWork.Dispose();
+    //     }
+    // }
     public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest)
+{
+    try
     {
-        try
+        _logger.LogInformation("Start registering user");
+        _unitOfWork.BeginTransaction();
+
+        var userRepository = _unitOfWork.GetRepository<User>();
+
+        // Check if email already exists
+        var existingUser = await userRepository.FindByConditionAsync(u => u.Email == registerRequest.Email);
+
+        if (existingUser != null)
         {
-            _logger.LogInformation("Start registering user");
-            _unitOfWork.BeginTransaction();
-
-            var userRepository = _unitOfWork.GetRepository<User>();
-
-            // Check if email already exists
-            var existingUser = await userRepository.FindByConditionAsync(u => u.Email == registerRequest.Email);
-
-            if (existingUser != null)
-            {
-                _logger.LogWarning("Email already exists: {Email}", registerRequest.Email);
-                return new RegisterResponse
-                {
-                    Success = false,
-                    Message = "Email already exists"
-                };
-            }
-
-            var hashedPassword = _rsaService.Encrypt(registerRequest.Password);
-            registerRequest.Password = hashedPassword;
-
-            // Map request to User entity
-            var userEntity = _mapper.Map<User>(registerRequest);
-            userEntity.CreatedBy = registerRequest.UserName;
-            userEntity.CreatedAt = DateTime.UtcNow.ToLocalTime();
-
-            // Assign the 'user' role to the new user
-            var roleRepository = _unitOfWork.GetRepository<Role>();
-            var userRole = await roleRepository.FindByConditionAsync(
-                r => r.RoleName.ToLower() == StaticEnum.RoleEnum.User.ToString().ToLower());
-            
-            if (userRole == null)
-            {
-                _logger.LogError("User role not found in database");
-                return new RegisterResponse
-                {
-                    Success = false,
-                    Message = "Error assigning user role"
-                };
-            }
-
-            userEntity.RoleId = userRole.RoleId;
-
-            await userRepository.InsertAsync(userEntity);
-            await _unitOfWork.SaveChangeAsync();
-
-            _unitOfWork.CommitTransaction();
-            _logger.LogInformation("User registration successful");
-
+            _logger.LogWarning("Email already exists: {Email}", registerRequest.Email);
             return new RegisterResponse
             {
-                Success = true,
-                Message = "User registered successfully"
+                Success = false,
+                Message = "Email already exists"
             };
         }
-        catch (Exception e)
+
+        var hashedPassword = _rsaService.Encrypt(registerRequest.Password);
+        registerRequest.Password = hashedPassword;
+
+        // Map request to User entity
+        var userEntity = _mapper.Map<User>(registerRequest);
+        userEntity.CreatedBy = registerRequest.UserName;
+        userEntity.CreatedAt = DateTime.UtcNow.ToLocalTime();
+        
+        // Set email verification status to false and generate verification token
+        userEntity.IsVerified = false;
+        userEntity.EmailVerificationToken = Guid.NewGuid().ToString();
+        userEntity.TokenExpiry = DateTime.UtcNow.AddDays(1); // Token valid for 1 days
+
+        // Assign the 'user' role to the new user
+        var roleRepository = _unitOfWork.GetRepository<Role>();
+        var userRole = await roleRepository.FindByConditionAsync(
+            r => r.RoleName.ToLower() == StaticEnum.RoleEnum.User.ToString().ToLower());
+        
+        if (userRole == null)
         {
-            _logger.LogError("Error at register user: {Message}", e.Message);
-            _unitOfWork.RollBack();
-            throw new Exception("An error occurred while registering the user", e);
+            _logger.LogError("User role not found in database");
+            return new RegisterResponse
+            {
+                Success = false,
+                Message = "Error assigning user role"
+            };
         }
-        finally
+
+        userEntity.RoleId = userRole.RoleId;
+
+        await userRepository.InsertAsync(userEntity);
+        await _unitOfWork.SaveChangeAsync();
+
+        // Send verification email
+        await SendVerificationEmail(userEntity);
+
+        _unitOfWork.CommitTransaction();
+        _logger.LogInformation("User registration successful, verification email sent");
+
+        return new RegisterResponse
         {
-            _unitOfWork.Dispose();
-        }
+            Success = true,
+            Message = "Registration successful. Please check your email to verify your account."
+        };
     }
+    catch (Exception e)
+    {
+        _logger.LogError("Error at register user: {Message}", e.Message);
+        _unitOfWork.RollBack();
+        throw new Exception("An error occurred while registering the user", e);
+    }
+    finally
+    {
+        _unitOfWork.Dispose();
+    }
+}
+
+    private async Task SendVerificationEmail(User user)
+    {
+        // Get template ID from enum
+        int templateId = StaticEnum.EmailTemplateEnum.EmailVerification.Id();
+    
+        // Create verification link with token
+        string verificationUrl = $"{_configuration["AppUrl"]}/verify-email?token={user.EmailVerificationToken}&email={Uri.EscapeDataString(user.Email)}";
+    
+        var templateData = new Dictionary<string, string>
+        {
+            { "UserName", user.UserName },
+            { "VerificationLink", verificationUrl },
+            { "VerificationButton", $"<a href='{verificationUrl}' style='display:inline-block;background-color:#c10c0c;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;font-weight:bold;'>CONFIRM YOUR EMAIL</a>" }
+        };
+    
+        await _emailService.SendEmailAsync(
+            user.Email,
+            user.UserName,
+            templateId,
+            templateData
+        );
+    }
+    
     public async Task<UserRes> Login(UserReq userReq)
     {
         try
