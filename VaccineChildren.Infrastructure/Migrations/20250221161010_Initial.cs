@@ -40,9 +40,9 @@ namespace VaccineChildren.Infrastructure.Migrations
                     price = table.Column<decimal>(type: "numeric(10,2)", precision: 10, scale: 2, nullable: true),
                     discount = table.Column<decimal>(type: "numeric(10,2)", precision: 10, scale: 2, nullable: true),
                     is_active = table.Column<bool>(type: "boolean", nullable: true),
-                    MinAge = table.Column<int>(type: "integer", nullable: true),
-                    MaxAge = table.Column<int>(type: "integer", nullable: true),
-                    Unit = table.Column<string>(type: "text", nullable: true),
+                    min_age = table.Column<int>(type: "integer", nullable: true),
+                    max_age = table.Column<int>(type: "integer", nullable: true),
+                    unit = table.Column<string>(type: "text", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     created_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
@@ -121,10 +121,10 @@ namespace VaccineChildren.Infrastructure.Migrations
                     created_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     updated_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    is_verified = table.Column<bool>(type: "boolean", nullable: false),
+                    is_verified = table.Column<bool>(type: "boolean", nullable: true),
                     email_verification_token =
-                        table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
-                    token_expiry = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                        table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    token_expiry = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -141,21 +141,21 @@ namespace VaccineChildren.Infrastructure.Migrations
                 name: "package_vaccine",
                 columns: table => new
                 {
-                    PackageId = table.Column<Guid>(type: "uuid", nullable: false),
-                    VaccineId = table.Column<Guid>(type: "uuid", nullable: false)
+                    package_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    vaccine_id = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("package_vaccine_pkey", x => new { x.PackageId, x.VaccineId });
+                    table.PrimaryKey("package_vaccine_pkey", x => new { x.package_id, x.vaccine_id });
                     table.ForeignKey(
                         name: "FK_package_vaccine_packages_PackageId",
-                        column: x => x.PackageId,
+                        column: x => x.package_id,
                         principalTable: "packages",
                         principalColumn: "package_id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_package_vaccine_vaccine_VaccineId",
-                        column: x => x.VaccineId,
+                        column: x => x.vaccine_id,
                         principalTable: "vaccine",
                         principalColumn: "vaccine_id",
                         onDelete: ReferentialAction.Cascade);

@@ -49,6 +49,9 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddConfig(builder.Configuration);
 
+builder.Services.AddHttpContextAccessor();
+
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

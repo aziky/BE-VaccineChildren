@@ -380,6 +380,12 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");
+            entity.Property(e => e.MinAge)
+                .HasColumnName("min_age");
+            entity.Property(e => e.MaxAge)
+                .HasColumnName("max_age");
+            entity.Property(e => e.Unit)
+                .HasColumnName("unit");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
@@ -388,11 +394,11 @@ public partial class VaccineSystemDbContext : DbContext
                 .WithMany(p => p.Packages)
                 .UsingEntity<Dictionary<string, object>>(
                     "PackageVaccine",
-                    r => r.HasOne<Vaccine>().WithMany().HasForeignKey("VaccineId"),
-                    l => l.HasOne<Package>().WithMany().HasForeignKey("PackageId"),
+                    r => r.HasOne<Vaccine>().WithMany().HasForeignKey("vaccine_id"),
+                    l => l.HasOne<Package>().WithMany().HasForeignKey("package_id"),
                     j =>
                     {
-                        j.HasKey("PackageId", "VaccineId").HasName("package_vaccine_pkey");
+                        j.HasKey("vaccine_id", "package_id").HasName("package_vaccine_pkey");
                         j.ToTable("package_vaccine");
                     });
         });
