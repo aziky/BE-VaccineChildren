@@ -29,7 +29,7 @@ services:
   vaccinechildren-api:
     build:
       context: .
-      dockerfile: VaccineChildren.API/Dockerfile
+      dockerfile: Dockerfile
     container_name: be_server
     ports:
       - "5014:5014"
