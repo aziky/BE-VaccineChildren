@@ -20,19 +20,25 @@ COPY . .
 WORKDIR "/app/VaccineChildren.API"
 RUN dotnet publish -c Release -o /out --no-restore
 
-# Sử dụng runtime để chạy ứng dụng
+# Runtime Image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
+# Cài đặt Docker CLI để chạy docker-compose
+RUN apt-get update && apt-get install -y docker.io
+
 # Copy từ build stage vào runtime
 COPY --from=build /out .
+
+# Copy file docker-compose.yml vào container
+COPY docker-compose.yml /app/docker-compose.yml
 
 # Thiết lập biến môi trường
 ENV ASPNETCORE_URLS=http://+:5014
 ENV DOTNET_RUNNING_IN_CONTAINER=true
 
-# Expose cổng ứng dụng
+# Expose cổng API
 EXPOSE 5014
 
-# Chạy ứng dụng
-CMD ["dotnet", "VaccineChildren.API.dll"]
+# Chạy docker-compose khi container khởi động
+CMD ["sh", "-c", "docker-compose up -d && dotnet VaccineChildren.API.dll"]
