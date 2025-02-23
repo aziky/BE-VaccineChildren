@@ -10,6 +10,6 @@ public interface IUserService
     Task<UserRes> Login(UserReq userReq);
     Task CreateChildAsync(CreateChildReq request);
     Task<GetChildRes> GetChildByChildIdAsync(string childId);
-    Task<GetUserRes> GetUserByUserIdAsync();
+    Task<GetUserRes> GetUserByUserIdAsync(string userId);
 
 }
