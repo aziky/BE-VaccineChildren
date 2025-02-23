@@ -89,12 +89,12 @@ public class UserController : BaseController
     }
     
     
-    [HttpGet]
-    public async Task<IActionResult> GetListChildByUserIdAsync()
+    [HttpGet("{userId}")]
+    public async Task<IActionResult> GetListChildByUserIdAsync([FromRoute] string userId)
     {
         try
         {
-            var userProfile = await _userService.GetUserByUserIdAsync();
+            var userProfile = await _userService.GetUserByUserIdAsync(userId);
             return Ok(BaseResponse<GetUserRes>.OkResponse(userProfile, "get user profile successfully"));
         }
         catch (Exception e)

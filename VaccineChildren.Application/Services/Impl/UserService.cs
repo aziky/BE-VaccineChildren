@@ -354,16 +354,15 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<GetUserRes> GetUserByUserIdAsync()
+    public async Task<GetUserRes> GetUserByUserIdAsync(string userId)
     {
         try
         {
-            string id = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Name).Value;
-            _logger.LogInformation("Start get user profile with user id {}", id);
+            _logger.LogInformation("Start get user profile with user id {}", userId);
             var userRepository = _unitOfWork.GetRepository<User>();
 
             var user = await userRepository.GetAllAsync(query => query.Include(u => u.Children)
-                    .Where(u => u.UserId.ToString().Equals(id)));
+                    .Where(u => u.UserId.ToString().Equals(userId)));
 
             
             return _mapper.Map<GetUserRes>(user.FirstOrDefault());
