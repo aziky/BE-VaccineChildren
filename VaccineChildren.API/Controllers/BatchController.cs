@@ -1,11 +1,11 @@
-using Microsoft.AspNetCore.Mvc;
-using VaccineChildren.Application.DTOs.Requests;
-using VaccineChildren.Application.Services;
-using VaccineChildren.Application.DTOs.Response;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using VaccineChildren.Application.DTOs.Requests;
+using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Application.DTOs.Responses;
+using VaccineChildren.Application.Services;
 using VaccineChildren.Core.Base;
 
 namespace VaccineChildren.API.Controllers

@@ -1,11 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Core.Base;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace VaccineChildren.API.Controllers
 {
@@ -83,6 +83,38 @@ namespace VaccineChildren.API.Controllers
             }
         }
 
+        // PUT api/v1/package/{packageId}/update-vaccines
+        [HttpPut("{packageId:guid}/update-vaccines")]
+        public async Task<IActionResult> UpdatePackageVaccines(Guid packageId, [FromBody] UpdatePackageVaccinesReq request)
+        {
+            try
+            {
+                _logger.LogInformation("Updating vaccines for package with ID: {PackageId}", packageId);
+
+                // Kiểm tra request đầu vào
+                if (request?.VaccineIds == null || request.VaccineIds.Count == 0)
+                {
+                    return BadRequest(BaseResponse<string>.BadRequestResponse("VaccineIds cannot be empty"));
+                }
+
+                // Gọi service để cập nhật vaccine
+                var updatedPackage = await _packageService.UpdatePackageVaccines(packageId, request);
+
+                return Ok(BaseResponse<PackageRes>.OkResponse(updatedPackage, "Package updated successfully"));
+            }
+            catch (KeyNotFoundException e)
+            {
+                _logger.LogError(e, "Package not found: {Message}", e.Message);
+                return NotFound(BaseResponse<string>.NotFoundResponse("Package not found"));
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Unexpected error while updating package: {Message}", e.Message);
+                return HandleException(e, "Internal Server Error");
+            }
+        }
+        
+
         // DELETE api/v1/package/{packageId}
         [HttpDelete("{packageId:guid}")]
         public async Task<IActionResult> DeletePackage(Guid packageId)
@@ -121,5 +153,7 @@ namespace VaccineChildren.API.Controllers
                 return HandleException(e, "Internal Server Error");
             }
         }
+        
+        
     }
 }

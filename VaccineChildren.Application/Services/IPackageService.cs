@@ -9,5 +9,5 @@ public interface IPackageService
     Task<List<PackageRes>> GetAllPackages();
     Task UpdatePackage(Guid packageId, PackageReq packageReq);
     Task DeletePackage(Guid packageId);
-
+    Task<PackageRes> UpdatePackageVaccines(Guid packageId, UpdatePackageVaccinesReq request);
 }
