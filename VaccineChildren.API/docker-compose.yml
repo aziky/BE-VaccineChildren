@@ -1,0 +1,52 @@
+﻿version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres_container
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mypasswordc
+      POSTGRES_DB: vaccine_system
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+#    networks:
+#      - app_network
+
+  redis:
+    image: redis:7.0.12
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: [ "redis-server", "--appendonly", "yes" ]
+#    networks:
+#      - app_network
+
+#  vaccinechildren-api:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    container_name: be_server
+#    ports:
+#      - "5014:5014"
+#      - "7014:7014"
+#    depends_on:
+#      - postgres
+#      - redis
+#    environment:
+#      - ASPNETCORE_ENVIRONMENT=Dev
+#      - ASPNETCORE_URLS=http://+:5014
+#    networks:
+#      - app_network
+#
+volumes:
+  postgres_data:
+  redis_data:
+#
+#
+#networks:
+#  app_network:
