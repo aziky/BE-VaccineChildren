@@ -8,7 +8,7 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_PASSWORD: mypasswordc
       POSTGRES_DB: vaccine_system
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -22,15 +22,15 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: ["redis-server", "--appendonly", "yes"]
+    command: [ "redis-server", "--appendonly", "yes" ]
 #    networks:
 #      - app_network
 
 #  vaccinechildren-api:
 #    build:
-#      context: ..
-#      dockerfile: VaccineChildren.API/Dockerfile  # Đảm bảo đường dẫn chính xác
-#    container_name: vaccine_children_server
+#      context: .
+#      dockerfile: Dockerfile
+#    container_name: be_server
 #    ports:
 #      - "5014:5014"
 #      - "7014:7014"
@@ -38,15 +38,15 @@ services:
 #      - postgres
 #      - redis
 #    environment:
-#      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=vaccine_system;Username=postgres;Password=mypassword
-#      - Redis__Connection=redis:6379
+#      - ASPNETCORE_ENVIRONMENT=Dev
 #      - ASPNETCORE_URLS=http://+:5014
 #    networks:
 #      - app_network
-
+#
 volumes:
   postgres_data:
   redis_data:
-
+#
+#
 #networks:
 #  app_network:

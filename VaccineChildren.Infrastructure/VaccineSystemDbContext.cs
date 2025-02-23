@@ -380,6 +380,12 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");
+            entity.Property(e => e.MinAge)
+                .HasColumnName("min_age");
+            entity.Property(e => e.MaxAge)
+                .HasColumnName("max_age");
+            entity.Property(e => e.Unit)
+                .HasColumnName("unit");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
@@ -388,11 +394,11 @@ public partial class VaccineSystemDbContext : DbContext
                 .WithMany(p => p.Packages)
                 .UsingEntity<Dictionary<string, object>>(
                     "PackageVaccine",
-                    r => r.HasOne<Vaccine>().WithMany().HasForeignKey("VaccineId"),
-                    l => l.HasOne<Package>().WithMany().HasForeignKey("PackageId"),
+                    r => r.HasOne<Vaccine>().WithMany().HasForeignKey("vaccine_id"),
+                    l => l.HasOne<Package>().WithMany().HasForeignKey("package_id"),
                     j =>
                     {
-                        j.HasKey("PackageId", "VaccineId").HasName("package_vaccine_pkey");
+                        j.HasKey("vaccine_id", "package_id").HasName("package_vaccine_pkey");
                         j.ToTable("package_vaccine");
                     });
         });
@@ -624,7 +630,13 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.UserName)
                 .HasMaxLength(100)
                 .HasColumnName("user_name");
-
+            entity.Property((e=>e.EmailVerificationToken))
+                .HasMaxLength(256)
+                .HasColumnName("email_verification_token");
+            entity.Property(e => e.TokenExpiry)
+                .HasColumnType("timestamp with time zone")
+                .HasColumnName("token_expiry");
+            entity.Property(e => e.IsVerified).HasColumnName("is_verified");
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)
                 .HasConstraintName("users_role_id_fkey");

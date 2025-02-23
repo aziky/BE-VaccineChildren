@@ -7,6 +7,13 @@ using Microsoft.OpenApi.Any;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// builder.WebHost.ConfigureKestrel(options =>
+// {
+//     options.ListenAnyIP(5014); 
+//     options.ListenAnyIP(7089);
+// });
+//
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -50,6 +57,9 @@ builder.Services.AddSwaggerGen(c =>
 
 
 builder.Services.AddConfig(builder.Configuration);
+
+builder.Services.AddHttpContextAccessor();
+
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
