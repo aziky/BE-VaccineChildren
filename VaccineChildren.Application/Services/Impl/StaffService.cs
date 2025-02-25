@@ -62,7 +62,8 @@ namespace VaccineChildren.Application.Services.Impl
                     Email = staffReq.Email,
                     Address = staffReq.Address,
                     CreatedAt = DateTime.UtcNow.ToLocalTime(),
-                    RoleId = 2,  
+                    RoleId = 2,
+                    IsVerified = true,
                 };
                 
                 await userRepository.InsertAsync(user);

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VaccineChildren.Infrastructure;
@@ -11,9 +12,11 @@ using VaccineChildren.Infrastructure;
 namespace VaccineChildren.Infrastructure.Migrations
 {
     [DbContext(typeof(VaccineSystemDbContext))]
-    partial class VaccineSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250225161051_MoveAddressFromUserToChild")]
+    partial class MoveAddressFromUserToChild
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -816,12 +819,17 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("email");
 
+                    b.Property<string>("EmailVerificationToken")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("email_verification_token");
+
                     b.Property<string>("FullName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("full_name");
 
-                    b.Property<bool>("IsVerified")
+                    b.Property<bool?>("IsVerified")
                         .HasColumnType("boolean")
                         .HasColumnName("is_verified");
 
@@ -839,6 +847,10 @@ namespace VaccineChildren.Infrastructure.Migrations
                     b.Property<int?>("RoleId")
                         .HasColumnType("integer")
                         .HasColumnName("role_id");
+
+                    b.Property<DateTime>("TokenExpiry")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("token_expiry");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp without time zone")

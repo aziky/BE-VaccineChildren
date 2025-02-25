@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VaccineChildren.Infrastructure;
@@ -11,9 +12,11 @@ using VaccineChildren.Infrastructure;
 namespace VaccineChildren.Infrastructure.Migrations
 {
     [DbContext(typeof(VaccineSystemDbContext))]
-    partial class VaccineSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250225154437_UserChange")]
+    partial class UserChange
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,16 +63,16 @@ namespace VaccineChildren.Infrastructure.Migrations
 
             modelBuilder.Entity("PackageVaccine", b =>
                 {
-                    b.Property<Guid>("vaccine_id")
+                    b.Property<Guid>("PackageId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("package_id")
+                    b.Property<Guid>("VaccineId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("vaccine_id", "package_id")
+                    b.HasKey("PackageId", "VaccineId")
                         .HasName("package_vaccine_pkey");
 
-                    b.HasIndex("package_id");
+                    b.HasIndex("VaccineId");
 
                     b.ToTable("package_vaccine", (string)null);
                 });
@@ -113,9 +116,6 @@ namespace VaccineChildren.Infrastructure.Migrations
                     b.Property<Guid>("ChildId")
                         .HasColumnType("uuid")
                         .HasColumnName("child_id");
-
-                    b.Property<string>("Address")
-                        .HasColumnType("text");
 
                     b.Property<string>("AllergiesNotes")
                         .HasColumnType("text")
@@ -1072,13 +1072,13 @@ namespace VaccineChildren.Infrastructure.Migrations
                 {
                     b.HasOne("VaccineChildren.Domain.Entities.Package", null)
                         .WithMany()
-                        .HasForeignKey("package_id")
+                        .HasForeignKey("PackageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("VaccineChildren.Domain.Entities.Vaccine", null)
                         .WithMany()
-                        .HasForeignKey("vaccine_id")
+                        .HasForeignKey("VaccineId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

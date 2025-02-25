@@ -9,16 +9,17 @@ namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize (Roles = "user")]
+// [Authorize (Roles = "user")]
 public class UserController : BaseController
 {
     private readonly ILogger<UserController> _logger;
     private readonly IUserService _userService;
-
-    public UserController(ILogger<UserController> logger, IUserService userService)
+    private readonly IConfiguration _configuration;
+    public UserController(ILogger<UserController> logger, IUserService userService, IConfiguration configuration)
     {
         _logger = logger;
         _userService = userService;
+        _configuration = configuration;
     }
     
     [AllowAnonymous]
@@ -54,6 +55,50 @@ public class UserController : BaseController
         catch (Exception ex)
         {
             _logger.LogError("{Classname} - Error at get account async cause by {}", nameof(UserController), ex.Message);
+            return HandleException(ex, nameof(UserController));
+        }
+    }
+    [AllowAnonymous]
+    [HttpGet("verify-email")]
+    public async Task<IActionResult> VerifyEmail([FromQuery] string token, [FromQuery] string email)
+    {
+        try
+        {
+            var result = await _userService.VerifyEmailAsync(token, email);
+        
+            if (!result.Success)
+            {
+                return BadRequest(BaseResponse<string>.BadRequestResponse("Email verification failed"));
+            }
+
+            // Redirect to frontend success page
+            return Redirect($"{_configuration["FrontendUrl"]}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("{Classname} - Error verifying email cause by {}", nameof(UserController), ex.Message);
+            return HandleException(ex, nameof(UserController));
+        }
+    }
+
+    [AllowAnonymous]
+    [HttpGet("resend-verification")]
+    public async Task<IActionResult> ResendVerificationEmail([FromQuery] string email)
+    {
+        try
+        {
+            var result = await _userService.ResendVerificationEmailAsync(email);
+        
+            if (!result.Success)
+            {
+                return BadRequest(BaseResponse<string>.BadRequestResponse("Resend email verification failed"));
+            }
+
+            return Ok(BaseResponse<string>.OkResponse("Verification email sent successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("{Classname} - Error resending verification email cause by {}", nameof(UserController), ex.Message);
             return HandleException(ex, nameof(UserController));
         }
     }
