@@ -35,4 +35,4 @@ ENV DOTNET_RUNNING_IN_CONTAINER=true
 EXPOSE 5014
 
 # Chạy ứng dụng
-ENTRYPOINT ["dotnet", "VaccineChildren.API.dll", "--urls", "http://32.142.192.209:5014"]
+ENTRYPOINT ["dotnet", "VaccineChildren.API.dll", "--urls", "http://0.0.0.0:5014"]
