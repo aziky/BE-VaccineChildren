@@ -342,10 +342,11 @@ public class UserService : IUserService
             _logger.LogInformation("Start getting child profile");
             
             var childRepository = _unitOfWork.GetRepository<Child>();
-            var child = await childRepository.GetByIdNoTracking(Guid.Parse(childId));
-            if (child == null) throw new KeyNotFoundException("Child not found");
+            var child = await childRepository.GetAllAsync(query => query.Include(c => c.Schedules)
+                .Where(c => c.ChildId.ToString().Equals(childId)));
+            if (child.FirstOrDefault() == null) throw new KeyNotFoundException("Child not found");
             
-            return _mapper.Map<GetChildRes>(child);
+            return _mapper.Map<GetChildRes>(child.FirstOrDefault());
         }
         catch (Exception e)
         {
@@ -360,10 +361,11 @@ public class UserService : IUserService
         {
             _logger.LogInformation("Start get user profile with user id {}", userId);
             var userRepository = _unitOfWork.GetRepository<User>();
+            var schedule = _unitOfWork.GetRepository<Schedule>();
 
-            var user = await userRepository.GetAllAsync(query => query.Include(u => u.Children)
+            var user = await userRepository.GetAllAsync(query => query.Include(u => u.Children).ThenInclude(c => c.Schedules)
                     .Where(u => u.UserId.ToString().Equals(userId)));
-
+            if (user.FirstOrDefault() == null) throw new KeyNotFoundException("Can't find user profile with user id: " + userId);
             
             return _mapper.Map<GetUserRes>(user.FirstOrDefault());
             

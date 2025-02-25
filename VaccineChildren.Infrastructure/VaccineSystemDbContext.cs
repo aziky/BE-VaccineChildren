@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using VaccineChildren.Domain.Entities;
 
@@ -119,6 +117,7 @@ public partial class VaccineSystemDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Address).HasColumnName("address");
 
             entity.HasOne(d => d.User).WithMany(p => p.Children)
                 .HasForeignKey(d => d.UserId)
