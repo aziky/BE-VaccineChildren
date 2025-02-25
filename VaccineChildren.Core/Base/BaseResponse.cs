@@ -16,12 +16,16 @@ public class BaseResponse<T>
 
     [JsonPropertyOrder(4)]
     public T? Data { get; set; }
+    
+    [JsonPropertyOrder(5)]
+    public int TotalCount { get; set; }
     public BaseResponse(StatusCodeHelper statusCode, string code, T? data, string? message)
     {
         StatusCode = statusCode;
         Code = code;
         Message = message;
         Data = data;
+        TotalCount = 0;
     }
 
     public BaseResponse(StatusCodeHelper statusCode, string code, T? data)
@@ -29,6 +33,7 @@ public class BaseResponse<T>
         StatusCode = statusCode;
         Code = code;
         Data = data;
+        TotalCount = 0;
     }
 
     public BaseResponse(StatusCodeHelper statusCode, string code, string? message)
@@ -36,6 +41,7 @@ public class BaseResponse<T>
         StatusCode = statusCode;
         Code = code;
         Message = message;
+        TotalCount = 0;
     }
 
     public static BaseResponse<T> OkResponse(T? data, string? mess)

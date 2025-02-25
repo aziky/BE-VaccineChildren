@@ -105,7 +105,12 @@ namespace VaccineChildren.API.Controllers
             catch (KeyNotFoundException e)
             {
                 _logger.LogError(e, "Package not found: {Message}", e.Message);
-                return NotFound(BaseResponse<string>.NotFoundResponse("Package not found"));
+                return NotFound(BaseResponse<string>.NotFoundResponse(e.Message));
+            }
+            catch (InvalidOperationException e)
+            {
+                _logger.LogError(e, "Invalid operation: {Message}", e.Message);
+                return BadRequest(BaseResponse<string>.BadRequestResponse(e.Message));
             }
             catch (Exception e)
             {

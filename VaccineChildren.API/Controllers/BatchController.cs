@@ -46,8 +46,8 @@ namespace VaccineChildren.API.Controllers
         }
 
         // GET api/v1/batch/{batchId}
-        [HttpGet("{batchId:guid}")]
-        public async Task<IActionResult> GetBatchById(Guid batchId)
+        [HttpGet("{batchId}")]
+        public async Task<IActionResult> GetBatchById(string batchId)
         {
             try
             {
@@ -85,8 +85,8 @@ namespace VaccineChildren.API.Controllers
         }
 
         // PUT api/v1/batch/{batchId}
-        [HttpPut("{batchId:guid}")]
-        public async Task<IActionResult> UpdateBatch(Guid batchId, [FromBody] BatchReq batchReq)
+        [HttpPut("{batchId}")]
+        public async Task<IActionResult> UpdateBatch(string batchId, [FromBody] BatchReq batchReq)
         {
             try
             {
@@ -112,8 +112,8 @@ namespace VaccineChildren.API.Controllers
         }
 
         // DELETE api/v1/batch/{batchId}
-        [HttpDelete("{batchId:guid}")]
-        public async Task<IActionResult> DeleteBatch(Guid batchId)
+        [HttpDelete("{batchId}")]
+        public async Task<IActionResult> DeleteBatch(string batchId)
         {
             try
             {

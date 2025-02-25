@@ -2,7 +2,7 @@
 
 public partial class Batch
 {
-    public Guid BatchId { get; set; } = Guid.NewGuid();
+    public String BatchId { get; set; }
 
     public Guid? VaccineId { get; set; }
 

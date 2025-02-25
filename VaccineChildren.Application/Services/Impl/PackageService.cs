@@ -151,38 +151,30 @@
         var currentVaccines = package.Vaccines.ToList();
         var allVaccines = await _vaccineRepository.GetAllAsync("VaccineManufactures");
 
-        // 2. Kiểm tra danh sách vaccine mới không bị thêm hoặc xóa
-        if (request.VaccineIds.Count != currentVaccines.Count)
-        {
-            throw new InvalidOperationException("You can only change manufacturers, not add or remove vaccines.");
-        }
-
-        // 3. Lấy danh sách vaccine mới từ request
+        // 2. Lấy danh sách vaccine mới từ request
         var newVaccines = allVaccines.Where(v => request.VaccineIds.Contains(v.VaccineId)).ToList();
 
-        // 4. Kiểm tra vaccine có cùng tên và khác manufacturer hay không
-        var updatedVaccines = new List<Vaccine>();
-        bool hasChanges = false;
+        // 3. Kiểm tra các vaccine mới có cùng tên với vaccine hiện tại không
+        var currentVaccineNames = currentVaccines.Select(v => v.VaccineName).OrderBy(name => name).ToList();
+        var newVaccineNames = newVaccines.Select(v => v.VaccineName).OrderBy(name => name).ToList();
 
+        if (!currentVaccineNames.SequenceEqual(newVaccineNames))
+        {
+            throw new InvalidOperationException("All vaccines in the updated package must have the same names as the current vaccines.");
+        }
+
+        // 4. Kiểm tra xem có thay đổi manufacturer nào không
+        bool hasChanges = false;
         foreach (var currentVaccine in currentVaccines)
         {
-            var matchingNewVaccine = newVaccines.FirstOrDefault(v => v.VaccineName == currentVaccine.VaccineName);
-            if (matchingNewVaccine == null)
-            {
-                throw new InvalidOperationException($"Vaccine {currentVaccine.VaccineName} must be included in the update.");
-            }
-
+            var matchingNewVaccine = newVaccines.First(v => v.VaccineName == currentVaccine.VaccineName);
             var currentManufacturerId = currentVaccine.VaccineManufactures.FirstOrDefault()?.ManufacturerId;
             var newManufacturerId = matchingNewVaccine.VaccineManufactures.FirstOrDefault()?.ManufacturerId;
 
             if (currentManufacturerId != newManufacturerId)
             {
                 hasChanges = true;
-                updatedVaccines.Add(matchingNewVaccine);
-            }
-            else
-            {
-                updatedVaccines.Add(currentVaccine);
+                break;
             }
         }
 
@@ -194,7 +186,7 @@
         }
 
         // 6. Tính lại tổng giá trước khi áp dụng giảm giá
-        decimal totalPrice = updatedVaccines.Sum(v => v.VaccineManufactures.FirstOrDefault()?.Price ?? 0);
+        decimal totalPrice = newVaccines.Sum(v => v.VaccineManufactures.FirstOrDefault()?.Price ?? 0);
         decimal discount = package.Discount ?? 0;
         decimal newTotalPrice = totalPrice * (1 - discount / 100);
 
@@ -204,7 +196,7 @@
         var existingCustomPackage = existingPackage.FirstOrDefault(p =>
             p.PackageName.Contains("Custom") &&
             p.Vaccines.OrderBy(v => v.VaccineId).Select(v => v.VaccineId).SequenceEqual(
-                updatedVaccines.OrderBy(v => v.VaccineId).Select(v => v.VaccineId))
+                newVaccines.OrderBy(v => v.VaccineId).Select(v => v.VaccineId))
         );
 
         if (existingCustomPackage != null)
@@ -218,7 +210,7 @@
         {
             PackageId = Guid.NewGuid(),
             PackageName = package.PackageName + " Custom",
-            Vaccines = updatedVaccines,
+            Vaccines = newVaccines,
             Price = newTotalPrice,
             Description = package.Description,
             Discount = package.Discount,
@@ -237,7 +229,10 @@
     }
     catch (Exception ex)
     {
-        _unitOfWork.RollBack();
+        if (_unitOfWork.HasActiveTransaction())
+        {
+            _unitOfWork.RollBack();
+        }
         _logger.LogError(ex, "Error updating vaccines for package with ID: {PackageId}", packageId);
         throw;
     }

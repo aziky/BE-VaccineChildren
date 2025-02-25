@@ -38,7 +38,7 @@ public class BatchService : IBatchService
 
             var batch = new Batch
             {
-                BatchId = Guid.NewGuid(),
+                BatchId = batchReq.BatchId,
                 VaccineId = batchReq.VaccineId.Value,
                 ProductionDate = batchReq.ProductionDate.Value,
                 ExpirationDate = batchReq.ExpirationDate.Value,
@@ -59,7 +59,7 @@ public class BatchService : IBatchService
     }
 
     // 2. Get Batch By Id
-    public async Task<BatchRes> GetBatchById(Guid batchId)
+    public async Task<BatchRes> GetBatchById(String batchId)
     {
         try
         {
@@ -138,7 +138,7 @@ public class BatchService : IBatchService
 
 
     // 4. Update Batch
-    public async Task UpdateBatch(Guid batchId, BatchReq batchReq)
+    public async Task UpdateBatch(String batchId, BatchReq batchReq)
     {
         try
         {
@@ -182,7 +182,7 @@ public class BatchService : IBatchService
     }
 
     // 5. Delete Batch
-    public async Task DeleteBatch(Guid batchId)
+    public async Task DeleteBatch(String batchId)
     {
         try
         {

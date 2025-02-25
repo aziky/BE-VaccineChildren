@@ -60,24 +60,24 @@ namespace VaccineChildren.Infrastructure.Migrations
 
             modelBuilder.Entity("PackageVaccine", b =>
                 {
-                    b.Property<Guid>("PackageId")
+                    b.Property<Guid>("vaccine_id")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("VaccineId")
+                    b.Property<Guid>("package_id")
                         .HasColumnType("uuid");
 
-                    b.HasKey("PackageId", "VaccineId")
+                    b.HasKey("vaccine_id", "package_id")
                         .HasName("package_vaccine_pkey");
 
-                    b.HasIndex("VaccineId");
+                    b.HasIndex("package_id");
 
                     b.ToTable("package_vaccine", (string)null);
                 });
 
             modelBuilder.Entity("VaccineChildren.Domain.Entities.Batch", b =>
                 {
-                    b.Property<Guid>("BatchId")
-                        .HasColumnType("uuid")
+                    b.Property<string>("BatchId")
+                        .HasColumnType("text")
                         .HasColumnName("batch_id");
 
                     b.Property<DateTime?>("ExpirationDate")
@@ -476,10 +476,12 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("is_active");
 
                     b.Property<int?>("MaxAge")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("max_age");
 
                     b.Property<int?>("MinAge")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("min_age");
 
                     b.Property<string>("PackageName")
                         .HasMaxLength(100)
@@ -492,7 +494,8 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("price");
 
                     b.Property<string>("Unit")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("unit");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp without time zone")
@@ -811,7 +814,6 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("email");
 
                     b.Property<string>("EmailVerificationToken")
-                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("email_verification_token");
@@ -821,7 +823,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("full_name");
 
-                    b.Property<bool>("IsVerified")
+                    b.Property<bool?>("IsVerified")
                         .HasColumnType("boolean")
                         .HasColumnName("is_verified");
 
@@ -1076,13 +1078,13 @@ namespace VaccineChildren.Infrastructure.Migrations
                 {
                     b.HasOne("VaccineChildren.Domain.Entities.Package", null)
                         .WithMany()
-                        .HasForeignKey("PackageId")
+                        .HasForeignKey("package_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("VaccineChildren.Domain.Entities.Vaccine", null)
                         .WithMany()
-                        .HasForeignKey("VaccineId")
+                        .HasForeignKey("vaccine_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

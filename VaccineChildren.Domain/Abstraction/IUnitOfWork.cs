@@ -9,4 +9,5 @@ public interface IUnitOfWork : IDisposable
     void CommitTransaction();
     void RollBack();
 
+    bool HasActiveTransaction();
 }

@@ -11,10 +11,12 @@ namespace VaccineChildren.Application.Services
     {
         Task CreateVaccine(VaccineReq vaccineReq);
         Task<VaccineRes> GetVaccineById(Guid vaccineId);
-        Task<List<VaccineRes>> GetAllVaccines();
+        Task<(IEnumerable<VaccineRes> Vaccines, int TotalCount)> GetAllVaccines(int pageIndex = 1, int pageSize = 10);
         Task UpdateVaccine(Guid vaccineId, VaccineReq vaccineReq);
         Task DeleteVaccine(Guid vaccineId);
         Task<IEnumerable<VaccineRes>> GetAllVaccinesForEachAge(int minAge, int maxAge, string unit);
+
+        Task<IEnumerable<VaccineRes>> GetVaccinesByNameDifferentManufacturers(string vaccineName);
 
     }
 }

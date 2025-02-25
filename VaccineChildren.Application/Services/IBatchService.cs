@@ -7,8 +7,8 @@ using VaccineChildren.Domain.Entities;
 public interface IBatchService
 {
     Task CreateBatch(BatchReq batchReq);
-    Task<BatchRes?> GetBatchById(Guid batchId);
+    Task<BatchRes?> GetBatchById(String batchId);
     Task<List<BatchRes>> GetAllBatches();
-    Task UpdateBatch(Guid batchId, BatchReq batchReq);
-    Task DeleteBatch(Guid batchId);
+    Task UpdateBatch(String batchId, BatchReq batchReq);
+    Task DeleteBatch(String batchId);
 }

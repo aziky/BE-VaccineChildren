@@ -1,14 +1,17 @@
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using VaccineChildren.Application.DTOs.Request;
-using VaccineChildren.Application.DTOs.Response;
-using VaccineChildren.Domain.Entities;
-using VaccineChildren.Domain.Abstraction;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
+using VaccineChildren.Application.DTOs.Request;
+using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Core.Exceptions;
-using Microsoft.EntityFrameworkCore;
+using VaccineChildren.Domain.Abstraction;
+using VaccineChildren.Domain.Entities;
 
 namespace VaccineChildren.Application.Services.Impl
 {
@@ -17,71 +20,71 @@ namespace VaccineChildren.Application.Services.Impl
         private readonly ILogger<IVaccineService> _logger;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-
         private readonly IGenericRepository<Vaccine> _vaccineRepository;
 
         public VaccineService(ILogger<IVaccineService> logger, IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _logger = logger;
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _vaccineRepository = _unitOfWork.GetRepository<Vaccine>();
         }
 
-        // 1. Create Vaccine
+        // 1. Create Vaccine with Transaction
         public async Task CreateVaccine(VaccineReq vaccineReq)
         {
             try
             {
                 _logger.LogInformation("Start creating vaccine");
+
                 if (vaccineReq.MinAge > vaccineReq.MaxAge)
                 {
-                    throw new CustomExceptions.ValidationException("MinAge cannot be greater than MaxAge.");
+                    throw new ValidationException("MinAge cannot be greater than MaxAge.");
                 }
 
+                _unitOfWork.BeginTransaction();
 
-
-                // Ensure ManufacturerId is valid
-                var manufacturer = await _unitOfWork.GetRepository<Manufacturer>().GetByIdAsync(Guid.Parse(vaccineReq.ManufacturerId));
+                var manufacturerId = Guid.Parse(vaccineReq.ManufacturerId);
+                var manufacturerRepo = _unitOfWork.GetRepository<Manufacturer>();
+                var manufacturer = await manufacturerRepo.GetByIdAsync(manufacturerId);
                 if (manufacturer == null)
                 {
                     throw new CustomExceptions.EntityNotFoundException("Manufacturer", vaccineReq.ManufacturerId);
                 }
 
-                // Create new Vaccine entity
-                var vaccine = new Vaccine
+                var existingVaccine = await _vaccineRepository.FindAsync(v =>
+                    v.VaccineName == vaccineReq.VaccineName &&
+                    v.VaccineManufactures.Any(vm => vm.ManufacturerId == manufacturerId));
+                if (existingVaccine != null)
                 {
-                    VaccineId = Guid.NewGuid(),
-                    VaccineName = vaccineReq.VaccineName,
-                    MinAge = vaccineReq.MinAge,
-                    MaxAge = vaccineReq.MaxAge,
-                    IsActive = true,
-                    NumberDose = vaccineReq.NumberDose,
-                    Unit = vaccineReq.Unit,
-                    Duration = vaccineReq.Duration,
-                    Image = vaccineReq.Image,
-                    CreatedAt = DateTime.UtcNow.ToLocalTime(),
-                };
-                vaccine.Description = System.Text.Json.JsonSerializer.Serialize(vaccineReq.Description);
-                // Create VaccineManufacture and assign it to Vaccine
+                    throw new ValidationException("A vaccine with the same name and manufacturer already exists.");
+                }
+
+                var vaccine = _mapper.Map<Vaccine>(vaccineReq);
+                vaccine.VaccineId = Guid.NewGuid();
+                vaccine.IsActive = true;
+                vaccine.CreatedAt = DateTime.UtcNow.ToLocalTime();
+
                 var vaccineManufacture = new VaccineManufacture
                 {
-                    ManufacturerId = manufacturer.ManufacturerId,
+                    ManufacturerId = manufacturerId,
                     VaccineId = vaccine.VaccineId,
                     Price = vaccineReq.Price
                 };
+                vaccine.VaccineManufactures = new List<VaccineManufacture> { vaccineManufacture };
 
-                // Assign the VaccineManufacture to Vaccine
-                vaccine.VaccineManufactures.Add(vaccineManufacture);
-
-                // Insert Vaccine and related VaccineManufacture into database
                 await _vaccineRepository.InsertAsync(vaccine);
                 await _unitOfWork.SaveChangeAsync();
 
+                _unitOfWork.CommitTransaction();
                 _logger.LogInformation("Vaccine created successfully");
             }
             catch (Exception e)
             {
+                if (_unitOfWork.HasActiveTransaction())
+                {
+                    _unitOfWork.RollBack();
+                }
                 _logger.LogError("Error while creating vaccine: {Error}", e.Message);
                 throw;
             }
@@ -94,89 +97,48 @@ namespace VaccineChildren.Application.Services.Impl
             {
                 _logger.LogInformation("Retrieving vaccine with ID: {VaccineId}", vaccineId);
 
-                var vaccine = await _vaccineRepository.GetByIdAsync(vaccineId);
+                var vaccine = await _vaccineRepository.Entities
+                    .AsNoTracking()
+                    .Include(v => v.VaccineManufactures)
+                    .ThenInclude(vm => vm.Manufacturer)
+                    .FirstOrDefaultAsync(v => v.VaccineId == vaccineId);
+
                 if (vaccine == null)
                 {
                     _logger.LogInformation("Vaccine not found with ID: {VaccineId}", vaccineId);
                     throw new KeyNotFoundException("Vaccine not found");
                 }
 
-                var firstVaccineManufacture = vaccine.VaccineManufactures?.FirstOrDefault();
-                var manufacturer = firstVaccineManufacture?.Manufacturer;
-                var price = firstVaccineManufacture?.Price ?? 0;
-
-                var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
-                vaccineRes.Description = System.Text.Json.JsonSerializer.Deserialize<DTOs.Response.DescriptionDetail>(vaccine.Description);
-                vaccineRes.Price = price;
-
-                // Ánh xạ Manufacturer vào DTO
-                if (manufacturer != null)
-                {
-                    vaccineRes.Manufacturer = new ManufacturerRes
-                    {
-                        ManufacturerId = manufacturer.ManufacturerId,
-                        Name = manufacturer.Name,
-                        ShortName = manufacturer.ShortName,
-                        Description = manufacturer.Description,
-                        CountryName = manufacturer.CountryName,
-                        CountryCode = manufacturer.CountryCode,
-                        IsActive = manufacturer.IsActive
-                    };
-                }
-
-                return vaccineRes;
+                return _mapper.Map<VaccineRes>(vaccine);
             }
             catch (Exception e)
             {
-                _logger.LogError("Error while retrieving vaccine: {Error}", e.Message);
+                _logger.LogError("Error while retrieving vaccine {VaccineId}: {Error}", vaccineId, e.Message);
                 throw;
             }
         }
 
-
-
-        public async Task<List<VaccineRes>> GetAllVaccines()
+        // 3. Get All Vaccines with Pagination
+        public async Task<(IEnumerable<VaccineRes> Vaccines, int TotalCount)> GetAllVaccines(int pageIndex = 1, int pageSize = 10)
         {
             try
             {
-                _logger.LogInformation("Retrieving all vaccines");
+                _logger.LogInformation("Retrieving all vaccines, page {PageIndex}, size {PageSize}", pageIndex, pageSize);
 
-                var vaccines = await _vaccineRepository.GetAllAsync();
-                if (vaccines == null || vaccines.Count == 0)
-                {
-                    _logger.LogInformation("No vaccines found");
-                    return new List<VaccineRes>();
-                }
+                var query = _vaccineRepository.Entities
+                    .AsNoTracking()
+                    .Include(v => v.VaccineManufactures)
+                    .ThenInclude(vm => vm.Manufacturer);
 
-                var vaccineResList = vaccines.Select(vaccine =>
-                {
-                    var firstVaccineManufacture = vaccine.VaccineManufactures?.FirstOrDefault();
-                    var manufacturer = firstVaccineManufacture?.Manufacturer;
-                    var price = firstVaccineManufacture?.Price ?? 0;
+                var totalCount = await query.CountAsync();
+                var vaccines = await query
+                    .OrderBy(v => v.VaccineName)
+                    .Skip((pageIndex - 1) * pageSize)
+                    .Take(pageSize)
+                    .ProjectTo<VaccineRes>(_mapper.ConfigurationProvider)
+                    .ToListAsync();
 
-                    var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
-                    vaccineRes.Description = System.Text.Json.JsonSerializer.Deserialize<DTOs.Response.DescriptionDetail>(vaccine.Description);
-                    vaccineRes.Price = price;
-
-                    // Ánh xạ Manufacturer vào DTO
-                    if (manufacturer != null)
-                    {
-                        vaccineRes.Manufacturer = new ManufacturerRes
-                        {
-                            ManufacturerId = manufacturer.ManufacturerId,
-                            Name = manufacturer.Name,
-                            ShortName = manufacturer.ShortName,
-                            Description = manufacturer.Description,
-                            CountryName = manufacturer.CountryName,
-                            CountryCode = manufacturer.CountryCode,
-                            IsActive = manufacturer.IsActive
-                        };
-                    }
-
-                    return vaccineRes;
-                }).ToList();
-
-                return vaccineResList;
+                return (vaccines ?? new List<VaccineRes>(), totalCount);
             }
             catch (Exception e)
             {
@@ -185,170 +147,170 @@ namespace VaccineChildren.Application.Services.Impl
             }
         }
 
-
-
-        // 4. Update Vaccine
+        // 4. Update Vaccine with Transaction
         public async Task UpdateVaccine(Guid vaccineId, VaccineReq vaccineReq)
         {
             try
             {
                 _logger.LogInformation("Start updating vaccine with ID: {VaccineId}", vaccineId);
+
                 if (vaccineReq.MinAge > vaccineReq.MaxAge)
                 {
-                    throw new CustomExceptions.ValidationException("MinAge cannot be greater than MaxAge.");
+                    throw new ValidationException("MinAge cannot be greater than MaxAge.");
                 }
 
-                var vaccine = await _vaccineRepository.GetByIdAsync(vaccineId);
+                _unitOfWork.BeginTransaction();
+
+                var vaccine = await _vaccineRepository.Entities
+                    .Include(v => v.VaccineManufactures)
+                    .FirstOrDefaultAsync(v => v.VaccineId == vaccineId);
 
                 if (vaccine == null)
                 {
-                    _logger.LogInformation("Vaccine not found with ID: {VaccineId}", vaccineId);
                     throw new KeyNotFoundException("Vaccine not found");
                 }
 
-                // Update vaccine properties
-                vaccine.VaccineName = vaccineReq.VaccineName;
-                vaccine.Description = System.Text.Json.JsonSerializer.Serialize(vaccineReq.Description);
-                vaccine.MinAge = vaccineReq.MinAge;
-                vaccine.MaxAge = vaccineReq.MaxAge;
-                vaccine.IsActive = vaccineReq.IsActive;
-                vaccine.Duration = vaccineReq.Duration;
-                vaccine.NumberDose = vaccineReq.NumberDose;
-                vaccine.Unit = vaccineReq.Unit;
-                vaccine.Image = vaccineReq.Image;
+                _mapper.Map(vaccineReq, vaccine);
+                vaccine.UpdatedAt = DateTime.UtcNow.ToLocalTime();
 
-
-                // Ensure Manufacturer is valid
-                var manufacturer = await _unitOfWork.GetRepository<Manufacturer>().GetByIdAsync(Guid.Parse(vaccineReq.ManufacturerId));
+                var manufacturerId = Guid.Parse(vaccineReq.ManufacturerId);
+                var manufacturerRepo = _unitOfWork.GetRepository<Manufacturer>();
+                var manufacturer = await manufacturerRepo.GetByIdAsync(manufacturerId);
                 if (manufacturer == null)
                 {
-                    _logger.LogError("Manufacturer not found with ID: {ManufacturerId}", vaccineReq.ManufacturerId);
                     throw new KeyNotFoundException("Manufacturer not found");
                 }
 
-                // Update the VaccineManufacture for the vaccine
-                if (vaccine.VaccineManufactures == null)
+                var existingManufacture = vaccine.VaccineManufactures
+                    ?.FirstOrDefault(vm => vm.ManufacturerId == manufacturerId);
+                if (existingManufacture == null)
                 {
-                    vaccine.VaccineManufactures = new List<VaccineManufacture>(); // Khởi tạo danh sách nếu null
-                }
-
-// Kiểm tra xem vaccine đã có VaccineManufacture từ nhà sản xuất này chưa
-                var existingVaccineManufacture = vaccine.VaccineManufactures
-                    .FirstOrDefault(vm => vm.ManufacturerId == manufacturer.ManufacturerId);
-
-                if (existingVaccineManufacture == null)
-                {
-                    // Thêm mới VaccineManufacture vào danh sách
+                    vaccine.VaccineManufactures ??= new List<VaccineManufacture>();
                     vaccine.VaccineManufactures.Add(new VaccineManufacture
                     {
-                        ManufacturerId = manufacturer.ManufacturerId,
+                        ManufacturerId = manufacturerId,
                         VaccineId = vaccine.VaccineId,
                         Price = vaccineReq.Price
                     });
                 }
                 else
                 {
-                    // Cập nhật giá cho VaccineManufacture đã tồn tại
-                    existingVaccineManufacture.Price = vaccineReq.Price;
+                    existingManufacture.Price = vaccineReq.Price;
                 }
-
-                vaccine.UpdatedAt = DateTime.UtcNow.ToLocalTime();
 
                 await _vaccineRepository.UpdateAsync(vaccine);
                 await _unitOfWork.SaveChangeAsync();
 
+                _unitOfWork.CommitTransaction();
                 _logger.LogInformation("Vaccine updated successfully");
             }
             catch (Exception e)
             {
-                _logger.LogError("Error while updating vaccine: {Error}", e.Message);
+                if (_unitOfWork.HasActiveTransaction())
+                {
+                    _unitOfWork.RollBack();
+                }
+                _logger.LogError("Error while updating vaccine {VaccineId}: {Error}", vaccineId, e.Message);
                 throw;
             }
         }
 
-        // 5. Delete Vaccine
+        // 5. Delete Vaccine with Transaction
         public async Task DeleteVaccine(Guid vaccineId)
         {
             try
             {
                 _logger.LogInformation("Start deleting vaccine with ID: {VaccineId}", vaccineId);
 
-                var vaccine = await _vaccineRepository.GetByIdAsync(vaccineId);
+                _unitOfWork.BeginTransaction();
 
-                if (vaccine == null)
+                var vaccine = await _vaccineRepository.GetByIdAsync(vaccineId);
+                if (vaccine == null || !vaccine.IsActive.HasValue || !vaccine.IsActive.Value)
                 {
-                    _logger.LogInformation("Vaccine not found with ID: {VaccineId}", vaccineId);
-                    throw new KeyNotFoundException("Vaccine not found");
+                    throw new KeyNotFoundException("Vaccine not found or already inactive");
                 }
 
-                vaccine.IsActive = false; // Đánh dấu vaccine là đã bị xóa (inactive)
+                vaccine.IsActive = false;
                 await _vaccineRepository.UpdateAsync(vaccine);
                 await _unitOfWork.SaveChangeAsync();
 
+                _unitOfWork.CommitTransaction();
                 _logger.LogInformation("Vaccine deleted successfully");
             }
             catch (Exception e)
             {
-                _logger.LogError("Error while deleting vaccine: {Error}", e.Message);
+                if (_unitOfWork.HasActiveTransaction())
+                {
+                    _unitOfWork.RollBack();
+                }
+                _logger.LogError("Error while deleting vaccine {VaccineId}: {Error}", vaccineId, e.Message);
                 throw;
             }
         }
 
+        // 6. Get Vaccines by Age Range and Unit
         public async Task<IEnumerable<VaccineRes>> GetAllVaccinesForEachAge(int minAge, int maxAge, string unit)
-    {
-        try
         {
-            _logger.LogInformation("Retrieving vaccines for age range: {MinAge}-{MaxAge} {Unit}", minAge, maxAge, unit);
-
-            var vaccines = await _vaccineRepository.GetAllAsync(q => q
-                .Include(v => v.VaccineManufactures) 
-                .ThenInclude(vm => vm.Manufacturer) 
-                .Where(v => v.MinAge <= maxAge && v.MaxAge >= minAge));
-
-
-            vaccines = vaccines.Where(v => v.Unit.Equals(unit, StringComparison.OrdinalIgnoreCase)).ToList();
-
-            if (!vaccines.Any())
+            try
             {
-                _logger.LogInformation("No vaccines found for the specified age range.");
-                return new List<VaccineRes>();
+                _logger.LogInformation("Retrieving vaccines for age range: {MinAge}-{MaxAge} {Unit}", minAge, maxAge, unit);
+
+                var vaccines = await _vaccineRepository.Entities
+                    .AsNoTracking()
+                    .Where(v => v.MinAge.HasValue && v.MinAge.Value <= maxAge &&
+                                v.MaxAge.HasValue && v.MaxAge.Value >= minAge &&
+                                v.Unit != null && v.Unit.Equals(unit, StringComparison.OrdinalIgnoreCase))
+                    .Include(v => v.VaccineManufactures)
+                    .ThenInclude(vm => vm.Manufacturer)
+                    .ProjectTo<VaccineRes>(_mapper.ConfigurationProvider)
+                    .ToListAsync();
+
+                return vaccines ?? new List<VaccineRes>();
             }
-
-            var vaccineResList = vaccines.Select(vaccine =>
+            catch (Exception e)
             {
-                var firstVaccineManufacture = vaccine.VaccineManufactures?.FirstOrDefault();
-                var manufacturer = firstVaccineManufacture?.Manufacturer;
-                var price = firstVaccineManufacture?.Price ?? 0;
+                _logger.LogError("Error while retrieving vaccines for age range {MinAge}-{MaxAge} {Unit}: {Error}", minAge, maxAge, unit, e.Message);
+                throw;
+            }
+        }
 
-                var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
-                vaccineRes.Description = System.Text.Json.JsonSerializer.Deserialize<DTOs.Response.DescriptionDetail>(vaccine.Description);
-                vaccineRes.Price = price;
+        // 7. Get Vaccines by Name with Different Manufacturers
+        public async Task<IEnumerable<VaccineRes>> GetVaccinesByNameDifferentManufacturers(string vaccineName)
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving vaccines with name: {VaccineName}", vaccineName);
 
-                if (manufacturer != null)
+                var vaccines = await _vaccineRepository.Entities
+                    .AsNoTracking()
+                    .Where(v => v.VaccineName == vaccineName)
+                    .Include(v => v.VaccineManufactures)
+                    .ThenInclude(vm => vm.Manufacturer)
+                    .ProjectTo<VaccineRes>(_mapper.ConfigurationProvider)
+                    .ToListAsync();
+
+                if (!vaccines.Any())
                 {
-                    vaccineRes.Manufacturer = new ManufacturerRes
-                    {
-                        ManufacturerId = manufacturer.ManufacturerId,
-                        Name = manufacturer.Name,
-                        ShortName = manufacturer.ShortName,
-                        Description = manufacturer.Description,
-                        CountryName = manufacturer.CountryName,
-                        CountryCode = manufacturer.CountryCode,
-                        IsActive = manufacturer.IsActive
-                    };
+                    _logger.LogInformation("No vaccines found with name: {VaccineName}", vaccineName);
+                    return new List<VaccineRes>();
                 }
 
-                return vaccineRes;
-            }).ToList();
+                var result = vaccines
+                    .GroupBy(v => v.VaccineName)
+                    .Where(g => g.SelectMany(v => v.Manufacturer != null ? new[] { v.Manufacturer.ManufacturerId } : Array.Empty<Guid>())
+                                .Distinct()
+                                .Count() > 1)
+                    .SelectMany(g => g)
+                    .ToList();
 
-            return vaccineResList;
+                _logger.LogInformation("Found {ResultCount} vaccines with different manufacturers", result.Count);
+                return result;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while retrieving vaccines with name {VaccineName}: {Error}", vaccineName, e.Message);
+                throw;
+            }
         }
-        catch (Exception e)
-        {
-            _logger.LogError("Error while retrieving vaccines for age range {MinAge}-{MaxAge} {Unit}: {Error}", minAge, maxAge, unit, e.Message);
-            throw;
-        }
-    }
-
     }
 }
