@@ -60,16 +60,16 @@ namespace VaccineChildren.Infrastructure.Migrations
 
             modelBuilder.Entity("PackageVaccine", b =>
                 {
-                    b.Property<Guid>("PackageId")
+                    b.Property<Guid>("vaccine_id")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("VaccineId")
+                    b.Property<Guid>("package_id")
                         .HasColumnType("uuid");
 
-                    b.HasKey("PackageId", "VaccineId")
+                    b.HasKey("vaccine_id", "package_id")
                         .HasName("package_vaccine_pkey");
 
-                    b.HasIndex("VaccineId");
+                    b.HasIndex("package_id");
 
                     b.ToTable("package_vaccine", (string)null);
                 });
@@ -113,6 +113,9 @@ namespace VaccineChildren.Infrastructure.Migrations
                     b.Property<Guid>("ChildId")
                         .HasColumnType("uuid")
                         .HasColumnName("child_id");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("text");
 
                     b.Property<string>("AllergiesNotes")
                         .HasColumnType("text")
@@ -1069,13 +1072,13 @@ namespace VaccineChildren.Infrastructure.Migrations
                 {
                     b.HasOne("VaccineChildren.Domain.Entities.Package", null)
                         .WithMany()
-                        .HasForeignKey("PackageId")
+                        .HasForeignKey("package_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("VaccineChildren.Domain.Entities.Vaccine", null)
                         .WithMany()
-                        .HasForeignKey("VaccineId")
+                        .HasForeignKey("vaccine_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
