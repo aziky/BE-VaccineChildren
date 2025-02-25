@@ -5,8 +5,8 @@ WORKDIR /app
 # Copy toàn bộ solution vào container
 COPY ["VaccineChildren.sln", "./"]
 COPY ["VaccineChildren.API/VaccineChildren.API.csproj", "VaccineChildren.API/"]
-COPY ["VaccineChildren.API/private.key", "VaccineChildren.API/"]
-COPY ["VaccineChildren.API/public.key", "VaccineChildren.API/"]
+COPY ["VaccineChildren.API/private_key.rsa", "VaccineChildren.API/"]
+COPY ["VaccineChildren.API/public_key.rsa", "VaccineChildren.API/"]
 COPY ["VaccineChildren.Application/VaccineChildren.Application.csproj", "VaccineChildren.Application/"]
 COPY ["VaccineChildren.Core/VaccineChildren.Core.csproj", "VaccineChildren.Core/"]
 COPY ["VaccineChildren.Domain/VaccineChildren.Domain.csproj", "VaccineChildren.Domain/"]
