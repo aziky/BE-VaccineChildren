@@ -12,6 +12,6 @@ public interface IUserService
     Task<RegisterResponse> ResendVerificationEmailAsync(string email);
     Task CreateChildAsync(CreateChildReq request);
     Task<GetChildRes> GetChildByChildIdAsync(string childId);
-    Task<GetUserRes> GetUserByUserIdAsync();
+    Task<GetUserRes> GetUserByUserIdAsync(string userId);
 
 }

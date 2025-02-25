@@ -7,12 +7,6 @@ using Microsoft.OpenApi.Any;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// builder.WebHost.ConfigureKestrel(options =>
-// {
-//     options.ListenAnyIP(5014); 
-//     options.ListenAnyIP(7089);
-// });
-//
 
 // Add services to the container.
 builder.Services.AddControllers();

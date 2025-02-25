@@ -35,6 +35,9 @@ public static class DependencyInjection
         services.AddScoped<ICacheService, RedisCacheService>();
         services.AddScoped<IRsaService, RsaService>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddHttpClient<IProvinceService, ProvinceService>();
+        services.AddScoped<IVnPayService, VnPayService>();
+
     }
 
     private static void AddDatabase(this IServiceCollection services, DatabaseConnection databaseSettings)
