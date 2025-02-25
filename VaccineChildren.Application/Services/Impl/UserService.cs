@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -21,22 +22,24 @@ public class UserService : IUserService
     private readonly ILogger<IUserService> _logger;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
-    private readonly string _jwtSecret;
     private readonly IRsaService _rsaService;
     private readonly ICacheService _cacheService;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public UserService(ILogger<IUserService> logger, IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IRsaService rsaService, ICacheService cacheService, IEmailService emailService)
+    public UserService(ILogger<IUserService> logger, IUnitOfWork unitOfWork, IMapper mapper, 
+        IConfiguration configuration, IRsaService rsaService, ICacheService cacheService,
+        IEmailService emailService, IHttpContextAccessor httpContextAccessor)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
-        _jwtSecret = configuration["Jwt:Secret"];
         _rsaService = rsaService;
         _cacheService = cacheService;
         _emailService = emailService;
         _configuration = configuration;
+        _httpContextAccessor = httpContextAccessor;
     }
     public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest)
 {
@@ -376,14 +379,16 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<GetUserRes> GetUserByUserIdAsync(string userId)
+    public async Task<GetUserRes> GetUserByUserIdAsync()
     {
         try
         {
-            _logger.LogInformation("Start get user profile");
+            string id = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Name).Value;
+            _logger.LogInformation("Start get user profile with user id {}", id);
             var userRepository = _unitOfWork.GetRepository<User>();
+
             var user = await userRepository.GetAllAsync(query => query.Include(u => u.Children)
-                    .Where(u => u.UserId.ToString().Equals(userId)));
+                    .Where(u => u.UserId.ToString().Equals(id)));
 
             
             return _mapper.Map<GetUserRes>(user.FirstOrDefault());
