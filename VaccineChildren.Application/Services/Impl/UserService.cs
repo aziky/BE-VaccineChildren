@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -39,76 +38,6 @@ public class UserService : IUserService
         _emailService = emailService;
         _configuration = configuration;
     }
-    // public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest)
-    // {
-    //     try
-    //     {
-    //         _logger.LogInformation("Start registering user");
-    //         _unitOfWork.BeginTransaction();
-    //
-    //         var userRepository = _unitOfWork.GetRepository<User>();
-    //
-    //         // Check if email already exists
-    //         var existingUser = await userRepository.FindByConditionAsync(u => u.Email == registerRequest.Email);
-    //
-    //         if (existingUser != null)
-    //         {
-    //             _logger.LogWarning("Email already exists: {Email}", registerRequest.Email);
-    //             return new RegisterResponse
-    //             {
-    //                 Success = false,
-    //                 Message = "Email already exists"
-    //             };
-    //         }
-    //
-    //         var hashedPassword = _rsaService.Encrypt(registerRequest.Password);
-    //         registerRequest.Password = hashedPassword;
-    //
-    //         // Map request to User entity
-    //         var userEntity = _mapper.Map<User>(registerRequest);
-    //         userEntity.CreatedBy = registerRequest.UserName;
-    //         userEntity.CreatedAt = DateTime.UtcNow.ToLocalTime();
-    //
-    //         // Assign the 'user' role to the new user
-    //         var roleRepository = _unitOfWork.GetRepository<Role>();
-    //         var userRole = await roleRepository.FindByConditionAsync(
-    //             r => r.RoleName.ToLower() == StaticEnum.RoleEnum.User.ToString().ToLower());
-    //         
-    //         if (userRole == null)
-    //         {
-    //             _logger.LogError("User role not found in database");
-    //             return new RegisterResponse
-    //             {
-    //                 Success = false,
-    //                 Message = "Error assigning user role"
-    //             };
-    //         }
-    //
-    //         userEntity.RoleId = userRole.RoleId;
-    //
-    //         await userRepository.InsertAsync(userEntity);
-    //         await _unitOfWork.SaveChangeAsync();
-    //
-    //         _unitOfWork.CommitTransaction();
-    //         _logger.LogInformation("User registration successful");
-    //
-    //         return new RegisterResponse
-    //         {
-    //             Success = true,
-    //             Message = "User registered successfully"
-    //         };
-    //     }
-    //     catch (Exception e)
-    //     {
-    //         _logger.LogError("Error at register user: {Message}", e.Message);
-    //         _unitOfWork.RollBack();
-    //         throw new Exception("An error occurred while registering the user", e);
-    //     }
-    //     finally
-    //     {
-    //         _unitOfWork.Dispose();
-    //     }
-    // }
     public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest)
 {
     try
@@ -141,9 +70,14 @@ public class UserService : IUserService
         
         // Set email verification status to false and generate verification token
         userEntity.IsVerified = false;
-        userEntity.EmailVerificationToken = Guid.NewGuid().ToString();
-        userEntity.TokenExpiry = DateTime.UtcNow.AddDays(1); // Token valid for 1 days
-
+        // Generate token
+        var verificationToken = Guid.NewGuid().ToString();
+        var expiration = TimeSpan.FromDays(1);
+    
+        // Store in Redis with expiration
+        await _cacheService.SetAsync($"email_verification:{registerRequest.Email}", 
+            new { Token = verificationToken }, expiration);
+        
         // Assign the 'user' role to the new user
         var roleRepository = _unitOfWork.GetRepository<Role>();
         var userRole = await roleRepository.FindByConditionAsync(
@@ -165,7 +99,7 @@ public class UserService : IUserService
         await _unitOfWork.SaveChangeAsync();
 
         // Send verification email
-        await SendVerificationEmail(userEntity);
+        await SendVerificationEmail(userEntity, verificationToken);
 
         _unitOfWork.CommitTransaction();
         _logger.LogInformation("User registration successful, verification email sent");
@@ -188,13 +122,13 @@ public class UserService : IUserService
     }
 }
 
-    private async Task SendVerificationEmail(User user)
+    private async Task SendVerificationEmail(User user, string verificationToken)
     {
-        // Get template ID from enum
-        int templateId = StaticEnum.EmailTemplateEnum.EmailVerification.Id();
+        // Create verification URL with token
+        string verificationUrl = $"{_configuration["AppUrl"]}/api/User/verify-email?token={verificationToken}&email={Uri.EscapeDataString(user.Email)}";
     
-        // Create verification link with token
-        string verificationUrl = $"{_configuration["AppUrl"]}/verify-email?token={user.EmailVerificationToken}&email={Uri.EscapeDataString(user.Email)}";
+        // Get the email template
+        const int EMAIL_VERIFICATION_TEMPLATE_ID = 1; // Your template ID
     
         var templateData = new Dictionary<string, string>
         {
@@ -203,14 +137,105 @@ public class UserService : IUserService
             { "VerificationButton", $"<a href='{verificationUrl}' style='display:inline-block;background-color:#c10c0c;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;font-weight:bold;'>CONFIRM YOUR EMAIL</a>" }
         };
     
+        // Send the email
         await _emailService.SendEmailAsync(
             user.Email,
             user.UserName,
-            templateId,
+            EMAIL_VERIFICATION_TEMPLATE_ID,
             templateData
         );
     }
     
+    public async Task<RegisterResponse> VerifyEmailAsync(string token, string email)
+    {
+        try
+        {
+            // // Get the verification data from Redis
+            // var verificationDataJson = await _cacheService.GetAsync<JsonDocument>($"email_verification:{email}");
+            //
+            // if (verificationDataJson == null)
+            // {
+            //     return new RegisterResponse { Success = false, Message = "Verification link has expired or is invalid" };
+            // }
+            //
+            // // Extract the token safely
+            // var storedToken = verificationDataJson.RootElement.GetProperty("Token").GetString();
+            //
+            // if (storedToken != token)
+            // {
+            //     return new RegisterResponse { Success = false, Message = "Invalid verification token" };
+            // }
+            var verificationData = await _cacheService.GetAsync<EmailVerificationData>($"email_verification:{email}");
+            if (verificationData == null || verificationData.Token != token)
+            {
+                return new RegisterResponse { Success = false, Message = "Invalid or expired verification link" };
+            }
+        
+            // Update user verification status
+            var userRepository = _unitOfWork.GetRepository<User>();
+            var user = await userRepository.FindByConditionAsync(u => u.Email == email);
+        
+            if (user == null)
+            {
+                return new RegisterResponse { Success = false, Message = "User not found" };
+            }
+        
+            user.IsVerified = true;
+            user.UpdatedAt = DateTime.UtcNow.ToLocalTime();
+            user.UpdatedBy = "System";
+        
+            await userRepository.UpdateAsync(user);
+            await _unitOfWork.SaveChangeAsync();
+        
+            // Remove the verification token from Redis
+            await _cacheService.RemoveAsync($"email_verification:{email}");
+        
+            return new RegisterResponse { Success = true, Message = "Email verified successfully" };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying email for {Email}", email);
+            throw;
+        }
+    }
+    public async Task<RegisterResponse> ResendVerificationEmailAsync(string email)
+    {
+        try
+        {
+            var userRepository = _unitOfWork.GetRepository<User>();
+            var user = await userRepository.FindByConditionAsync(u => u.Email == email);
+
+            if (user == null)
+            {
+                return new RegisterResponse { Success = false, Message = "User not found" };
+            }
+
+            if (user.IsVerified)
+            {
+                return new RegisterResponse { Success = false, Message = "Email is already verified" };
+            }
+
+            // Generate a new verification token
+            string verificationToken = Guid.NewGuid().ToString();
+
+            // Store token in Redis with expiration (1 day)
+            await _cacheService.SetAsync(
+                $"email_verification:{email}",
+                new EmailVerificationData { Token = verificationToken },
+                TimeSpan.FromDays(1)
+            );
+
+            // Send the verification email with the new token
+            await SendVerificationEmail(user, verificationToken);
+
+            return new RegisterResponse { Success = true, Message = "Verification email has been resent" };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resending verification email for {Email}", email);
+            throw;
+        }
+    }
     public async Task<UserRes> Login(UserReq userReq)
     {
         try

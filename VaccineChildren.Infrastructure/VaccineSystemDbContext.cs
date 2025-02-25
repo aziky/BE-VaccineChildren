@@ -626,12 +626,6 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.UserName)
                 .HasMaxLength(100)
                 .HasColumnName("user_name");
-            entity.Property((e=>e.EmailVerificationToken))
-                .HasMaxLength(256)
-                .HasColumnName("email_verification_token");
-            entity.Property(e => e.TokenExpiry)
-                .HasColumnType("timestamp with time zone")
-                .HasColumnName("token_expiry");
             entity.Property(e => e.IsVerified).HasColumnName("is_verified");
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)
