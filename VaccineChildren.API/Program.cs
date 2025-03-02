@@ -24,6 +24,7 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
+    c.EnableAnnotations(); 
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {

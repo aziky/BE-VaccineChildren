@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using VaccineChildren.Application.DTOs.Request;
@@ -15,12 +16,15 @@ public class OrderService : IOrderService
     private readonly ILogger<OrderService> _logger;
     private readonly IUnitOfWork _unitOfWork;
     private IVnPayService _vnPayService;
+    private readonly IServiceProvider _serviceProvider;
 
-    public OrderService(ILogger<OrderService> logger, IUnitOfWork unitOfWork, IVnPayService vnPayService)
+    public OrderService(ILogger<OrderService> logger, IUnitOfWork unitOfWork, IVnPayService vnPayService,
+        IServiceProvider serviceProvider)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
         _vnPayService = vnPayService;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task<string> CreateOrderAsync(CreateOrderReq request, HttpContext httpContext)
@@ -127,37 +131,39 @@ public class OrderService : IOrderService
         }
     }
 
-    public async Task HandleVpnResponse(IQueryCollection collections)
+    public async Task<bool> HandleVnPayResponse(IQueryCollection collections)
     {
+        using var scope = _serviceProvider.CreateScope(); // ✅ Creates a new DI scope
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>(); // ✅ Get a fresh UnitOfWork
         try
         {
+            _logger.LogInformation("Start handle vn pay response");
             var response = _vnPayService.PaymentExecute(collections);
             if (!response.Success || response.VnTransactionStatus != 00)
             {
-                throw new Exception("Error with vnpay paymnet " + response.VnTransactionStatus);
+                _logger.LogError("Error with vnpay paymnet " + response.VnTransactionStatus);
+                return false;
             }
-            
-            _unitOfWork.BeginTransaction();
-            var paymentRepository = _unitOfWork.GetRepository<Payment>();
-            
-            var payment = await paymentRepository.GetByIdAsync(response.PaymentId);
+
+            unitOfWork.BeginTransaction();
+            var paymentRepository = unitOfWork.GetRepository<Payment>();
+
+            var payment = await paymentRepository.GetByIdAsync(Guid.Parse(response.PaymentId));
             payment.PaymentStatus = StaticEnum.PaymentStatusEnum.Paid.Name();
             payment.UpdatedAt = DateTime.Now;
             payment.UpdatedBy = StaticEnum.PaymentMethodEnum.VnPay.Name();
-            
+
             await paymentRepository.UpdateAsync(payment);
-            await _unitOfWork.SaveChangeAsync();
-            _unitOfWork.CommitTransaction();
+            await unitOfWork.SaveChangeAsync();
+            unitOfWork.CommitTransaction();
         }
         catch (Exception e)
         {
-            _logger.LogError(e.Message);
-            _unitOfWork.RollBack();
-            throw;
+            _logger.LogError("Error at handle vn pay response {}", e.Message);
+            unitOfWork.RollBack();
+            return false;
         }
-        finally
-        {
-            _unitOfWork.Dispose();
-        }
+
+        return true;
     }
 }
