@@ -512,6 +512,7 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.VaccineType)
                 .HasMaxLength(255)
                 .HasColumnName("vaccine_type");
+            entity.Property(e => e.PreVaccineCheckup).HasColumnName("pre_vaccine_checkup");
 
             entity.HasOne(d => d.AdministeredByNavigation).WithMany(p => p.Schedules)
                 .HasForeignKey(d => d.AdministeredBy)

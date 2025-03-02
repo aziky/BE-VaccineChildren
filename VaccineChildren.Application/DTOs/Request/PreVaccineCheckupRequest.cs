@@ -3,7 +3,7 @@
 public class PreVaccineCheckupRequest
 {
     public Guid ScheduleId { get; set; }
-    public Guid DoctorId { get; set; }
+    public Guid DoctorId { get; set; }  // Added DoctorId field (User.UserId)
     
     // Vital signs
     public decimal Weight { get; set; }
@@ -12,7 +12,7 @@ public class PreVaccineCheckupRequest
     public string BloodPressure { get; set; }
     public int Pulse { get; set; }
     
-    // Medical history - using string array for checkboxes
+    // Medical history
     public string[] ChronicDiseases { get; set; }
     public string OtherDiseases { get; set; }
     public string CurrentMedications { get; set; }

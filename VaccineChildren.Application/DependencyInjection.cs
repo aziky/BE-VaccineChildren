@@ -18,6 +18,6 @@ public static class DependencyInjection
         services.AddScoped<IPackageService, PackageService>();
         services.AddScoped<IVaccineScheduleService, VaccineScheduleService>();
         services.AddScoped<IBatchService, BatchService>();
-
+        services.AddScoped<IVaccineCheckupService, VaccineCheckupService>();
     }
 }

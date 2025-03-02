@@ -19,6 +19,7 @@ public static class StaticEnum
         [CustomName("manager")] Manager,
         [CustomName("staff")] Staff,
         [CustomName("user")] User,
+        [CustomName("doctor")] Doctor,
     }
 
     public enum StatusEnum
