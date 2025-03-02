@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Core.Exceptions;
 using VaccineChildren.Domain.Abstraction;
 using VaccineChildren.Domain.Entities;
@@ -17,12 +18,12 @@ namespace VaccineChildren.Application.Services.Impl
         private readonly IUnitOfWork _unitOfWork;
         private readonly IGenericRepository<Vaccine> _vaccineRepository;
         private readonly IGenericRepository<Child> _childRepository;
-        private readonly ICacheService _cacheService; 
+        private readonly ICacheService _cacheService;
 
         public ScheduleService(
             ILogger<IScheduleService> logger,
             IUnitOfWork unitOfWork,
-            ICacheService cacheService) // Thêm ICacheService vào constructor
+            ICacheService cacheService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
@@ -31,82 +32,87 @@ namespace VaccineChildren.Application.Services.Impl
             _childRepository = _unitOfWork.GetRepository<Child>();
         }
 
+        // Cập nhật để nhận danh sách ScheduleReq và trả về danh sách Schedule
+        public async Task<IEnumerable<Schedule>> GenerateTemporaryScheduleAsync(List<ScheduleReq> requests)
+        {
+            if (requests == null || !requests.Any())
+                throw new ArgumentNullException(nameof(requests), "Request list cannot be null or empty.");
+
+            var allSchedules = new List<Schedule>();
+
+            foreach (var request in requests)
+            {
+                try
+                {
+                    _logger.LogInformation("Generating temporary schedule for vaccine {VaccineId} and child {ChildId}",
+                        request.VaccineId, request.ChildId);
+
+                    if (request.VaccineId == Guid.Empty)
+                        throw new ArgumentException("VaccineId cannot be empty.", nameof(request.VaccineId));
+                    if (request.ChildId == Guid.Empty)
+                        throw new ArgumentException("ChildId cannot be empty.", nameof(request.ChildId));
+
+                    var vaccine = await _vaccineRepository.Entities
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(v => v.VaccineId == request.VaccineId);
+
+                    if (vaccine == null)
+                    {
+                        _logger.LogWarning("Vaccine not found with ID: {VaccineId}", request.VaccineId);
+                        throw new CustomExceptions.EntityNotFoundException("Vaccine", request.VaccineId.ToString());
+                    }
+
+                    if (!vaccine.IsActive.GetValueOrDefault())
+                    {
+                        throw new ValidationException("Cannot generate schedule for an inactive vaccine.");
+                    }
+
+                    var child = await _childRepository.GetByIdAsync(request.ChildId);
+                    if (child == null)
+                    {
+                        _logger.LogWarning("Child not found with ID: {ChildId}", request.ChildId);
+                        throw new CustomExceptions.EntityNotFoundException("Child", request.ChildId.ToString());
+                    }
+
+                    var childAgeInMonths = CalculateAgeInMonths(child.Dob, request.StartDate);
+                    if (vaccine.MinAge.HasValue && childAgeInMonths < vaccine.MinAge.Value)
+                    {
+                        throw new ValidationException($"Child's age ({childAgeInMonths} months) is below the minimum age ({vaccine.MinAge.Value} months) required for this vaccine.");
+                    }
+                    if (vaccine.MaxAge.HasValue && childAgeInMonths > vaccine.MaxAge.Value)
+                    {
+                        throw new ValidationException($"Child's age ({childAgeInMonths} months) exceeds the maximum age ({vaccine.MaxAge.Value} months) allowed for this vaccine.");
+                    }
+
+                    var schedules = GenerateSchedule(vaccine, child, request.StartDate);
+                    if (!schedules.Any())
+                    {
+                        throw new ValidationException("Generated schedule is empty. Check vaccine configuration (NumberDose or Duration).");
+                    }
+
+                    // Lưu lịch vào Redis
+                    string cacheKey = $"schedule:{request.ChildId}:{request.VaccineId}";
+                    await _cacheService.SetAsync(cacheKey, schedules.ToList(), TimeSpan.FromDays(7));
+
+                    allSchedules.AddRange(schedules);
+                    _logger.LogInformation("Temporary schedule generated and cached successfully for vaccine {VaccineId}", request.VaccineId);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError("Error generating temporary schedule for vaccine {VaccineId} and child {ChildId}: {Error}",
+                        request.VaccineId, request.ChildId, e.Message);
+                    throw; // Có thể thay bằng continue nếu muốn bỏ qua lỗi từng request
+                }
+            }
+
+            return allSchedules;
+        }
+
+        // Phương thức cũ để tương thích với trường hợp đơn lẻ
         public async Task<IEnumerable<Schedule>> GenerateTemporaryScheduleAsync(Guid vaccineId, Guid childId, DateTime startDate)
         {
-            try
-            {
-                _logger.LogInformation("Generating temporary schedule for vaccine {VaccineId} and child {ChildId}", 
-                    vaccineId, childId);
-
-                if (vaccineId == Guid.Empty)
-                    throw new ArgumentException("VaccineId cannot be empty.");
-                if (childId == Guid.Empty)
-                    throw new ArgumentException("ChildId cannot be empty.");
-
-                if (_vaccineRepository == null)
-                {
-                    _logger.LogError("VaccineRepository is null.");
-                    throw new InvalidOperationException("VaccineRepository is not initialized.");
-                }
-
-                if (_childRepository == null)
-                {
-                    _logger.LogError("ChildRepository is null.");
-                    throw new InvalidOperationException("ChildRepository is not initialized.");
-                }
-
-                var vaccine = await _vaccineRepository.Entities
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(v => v.VaccineId == vaccineId);
-
-                if (vaccine == null)
-                {
-                    _logger.LogWarning("Vaccine not found with ID: {VaccineId}", vaccineId);
-                    throw new CustomExceptions.EntityNotFoundException("Vaccine", vaccineId.ToString());
-                }
-
-                if (!vaccine.IsActive.GetValueOrDefault())
-                {
-                    throw new ValidationException("Cannot generate schedule for an inactive vaccine.");
-                }
-
-                var child = await _childRepository.GetByIdAsync(childId);
-                if (child == null)
-                {
-                    _logger.LogWarning("Child not found with ID: {ChildId}", childId);
-                    throw new CustomExceptions.EntityNotFoundException("Child", childId.ToString());
-                }
-
-                var childAgeInMonths = CalculateAgeInMonths(child.Dob, startDate);
-                if (vaccine.MinAge.HasValue && childAgeInMonths < vaccine.MinAge.Value)
-                {
-                    throw new ValidationException($"Child's age ({childAgeInMonths} months) is below the minimum age ({vaccine.MinAge.Value} months) required for this vaccine.");
-                }
-                if (vaccine.MaxAge.HasValue && childAgeInMonths > vaccine.MaxAge.Value)
-                {
-                    throw new ValidationException($"Child's age ({childAgeInMonths} months) exceeds the maximum age ({vaccine.MaxAge.Value} months) allowed for this vaccine.");
-                }
-
-                var schedule = GenerateSchedule(vaccine, child, startDate);
-
-                if (!schedule.Any())
-                {
-                    throw new ValidationException("Generated schedule is empty. Check vaccine configuration (NumberDose or Duration).");
-                }
-
-                // Lưu lịch vào Redis
-                string cacheKey = $"schedule:{childId}:{vaccineId}";
-                await _cacheService.SetAsync(cacheKey, schedule.ToList(), TimeSpan.FromDays(7)); // Lưu trong 7 ngày
-
-                _logger.LogInformation("Temporary schedule generated and cached successfully for vaccine {VaccineId}", vaccineId);
-                return schedule;
-            }
-            catch (Exception e)
-            {
-                _logger.LogError("Error generating temporary schedule for vaccine {VaccineId} and child {ChildId}: {Error}", 
-                    vaccineId, childId, e.Message);
-                throw;
-            }
+            var request = new List<ScheduleReq> { new ScheduleReq { VaccineId = vaccineId, ChildId = childId, StartDate = startDate } };
+            return await GenerateTemporaryScheduleAsync(request);
         }
 
         private IEnumerable<Schedule> GenerateSchedule(Vaccine vaccine, Child child, DateTime startDate)

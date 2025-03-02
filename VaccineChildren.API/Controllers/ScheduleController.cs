@@ -74,13 +74,13 @@ public class ScheduleController : BaseController
     
     
     [HttpPost]
-    public async Task<IActionResult> GenerateTemporarySchedule([FromBody] ScheduleReq request)
+    public async Task<IActionResult> GenerateTemporarySchedule([FromBody] List<ScheduleReq> requests)
     {
         try
         {
-            if (request == null)
+            if (requests == null || !requests.Any())
             {
-                throw new ArgumentNullException(nameof(request), "Request cannot be null.");
+                throw new ArgumentNullException(nameof(requests), "Request list cannot be null or empty.");
             }
 
             if (_scheduleService == null)
@@ -89,13 +89,9 @@ public class ScheduleController : BaseController
                 throw new InvalidOperationException("ScheduleService is not initialized.");
             }
 
-            _logger.LogInformation("Generating temporary schedule for VaccineId: {VaccineId}, ChildId: {ChildId}",
-                request.VaccineId, request.ChildId);
+            _logger.LogInformation("Generating temporary schedules for {Count} requests", requests.Count);
 
-            var schedules = await _scheduleService.GenerateTemporaryScheduleAsync(
-                request.VaccineId,
-                request.ChildId,
-                request.StartDate);
+            var schedules = await _scheduleService.GenerateTemporaryScheduleAsync(requests);
 
             var scheduleResponses = schedules.Select(s => new ScheduleRes
             {
@@ -106,7 +102,7 @@ public class ScheduleController : BaseController
             }).ToList();
 
             return Ok(BaseResponse<List<ScheduleRes>>.OkResponse(scheduleResponses,
-                "Temporary vaccine schedule generated successfully"));
+                "Temporary vaccine schedules generated successfully"));
         }
         catch (Exception e)
         {
