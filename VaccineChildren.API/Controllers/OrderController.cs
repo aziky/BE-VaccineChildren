@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Core.Base;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace VaccineChildren.API.Controllers;
 
@@ -15,10 +16,11 @@ public class OrderController : BaseController
     private readonly IOrderService _orderService;
     private readonly IConfiguration _configuration;
 
-    public OrderController(ILogger<OrderController> logger, IOrderService orderService)
+    public OrderController(ILogger<OrderController> logger, IOrderService orderService, IConfiguration configuration)
     {
         _logger = logger;
         _orderService = orderService;
+        _configuration = configuration;
     }
 
     [HttpPost]
@@ -38,13 +40,18 @@ public class OrderController : BaseController
     
     [AllowAnonymous]
     [HttpGet]
+    [SwaggerOperation(Summary = "Handle VNPAY Payment Response", 
+        Description = "Processes the payment response from VNPAY.")]
     public async Task<IActionResult> HandleVnResponse()
     {
         try
         {
-            var response = _orderService.HandleVpnResponse(Request.Query);
-
-            string successUrl = _configuration["Vnpay:PaymentBackReturnUrl"];
+            var response = await _orderService.HandleVnPayResponse(Request.Query);
+            if (response == false)
+            {
+                return Redirect(_configuration["PaymentCancelUrl"]);
+            }
+            string successUrl = _configuration["PaymentSuccessUrl"];
             return Redirect(successUrl);
         }
         catch (Exception e)

@@ -19,13 +19,8 @@ public static class DependencyInjection
         var databaseSettings = new DatabaseConnection(
             services.BuildServiceProvider().GetRequiredService<ILogger<DatabaseConnection>>()
         );
-        services.AddSingleton<DatabaseConnection>(sp =>
-        {
-            var logger = sp.GetRequiredService<ILogger<DatabaseConnection>>();
-            var dbSettings = new DatabaseConnection(logger);
-            configuration.GetSection("DatabaseConnection").Bind(dbSettings);
-            return dbSettings;
-        });
+        configuration.GetSection("DatabaseConnection").Bind(databaseSettings);
+        services.AddSingleton(databaseSettings);
         services.AddDatabase(databaseSettings);
 
         var redisSettings = new RedisConnection(     

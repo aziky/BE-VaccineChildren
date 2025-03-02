@@ -7,5 +7,5 @@ public interface IOrderService
 {
      Task<string> CreateOrderAsync(CreateOrderReq request, HttpContext httpContext);
 
-     Task HandleVpnResponse(IQueryCollection collection);
+     Task<bool> HandleVnPayResponse(IQueryCollection collection);
 }
