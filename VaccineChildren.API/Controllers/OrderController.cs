@@ -3,25 +3,22 @@ using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Core.Base;
-using VaccineChildren.Domain.Abstraction;
 
 namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-// [Authorize(Roles = "user")]
+[Authorize(Roles = "user")]
 public class OrderController : BaseController
 {
     private readonly ILogger<OrderController> _logger;
     private readonly IOrderService _orderService;
-    private readonly IVnPayService _vnPayService;
     private readonly IConfiguration _configuration;
 
-    public OrderController(ILogger<OrderController> logger, IOrderService orderService, IVnPayService vnPayService)
+    public OrderController(ILogger<OrderController> logger, IOrderService orderService)
     {
         _logger = logger;
         _orderService = orderService;
-        _vnPayService = vnPayService;
     }
 
     [HttpPost]
