@@ -25,7 +25,8 @@ public class VnPayLibrary
         }
 
         var orderId = Convert.ToInt64(vnPay.GetResponseData("vnp_TxnRef"));
-        var vnPayTranId = Convert.ToInt64(vnPay.GetResponseData("vnp_TransactionNo"));
+        var vnTransactionStatus = Convert.ToInt64(vnPay.GetResponseData("vnp_TransactionStatus"));
+        var vnPayTranId = Convert.ToInt16(vnPay.GetResponseData("vnp_TransactionNo"));
         var vnpResponseCode = vnPay.GetResponseData("vnp_ResponseCode");
         var vnpSecureHash =
             collection.FirstOrDefault(k => k.Key == "vnp_SecureHash").Value; //hash của dữ liệu trả về
@@ -33,10 +34,14 @@ public class VnPayLibrary
         var checkSignature =
             vnPay.ValidateSignature(vnpSecureHash, hashSecret); //check Signature
         if (!checkSignature)
+        {
             return new PaymentResponseModel()
             {
-                Success = false
+                Success = false,
+                VnTransactionStatus = vnTransactionStatus,
             };
+        }
+           
         return new PaymentResponseModel()
         {
             Success = true,
@@ -46,7 +51,8 @@ public class VnPayLibrary
             PaymentId = vnPayTranId.ToString(),
             TransactionId = vnPayTranId.ToString(),
             Token = vnpSecureHash,
-            VnPayResponseCode = vnpResponseCode
+            VnPayResponseCode = vnpResponseCode,
+            VnTransactionStatus = vnTransactionStatus,
         };
     }
 
