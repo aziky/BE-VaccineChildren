@@ -8,7 +8,6 @@ namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-// [Authorize(Roles = "staff")]
 public class ScheduleController : BaseController
 {
     private readonly ILogger<ScheduleController> _logger;
