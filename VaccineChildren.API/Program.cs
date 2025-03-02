@@ -24,6 +24,7 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
+    c.EnableAnnotations(); 
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -84,6 +85,8 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole(StaticEnum.RoleEnum.Staff.ToString()));
     options.AddPolicy("RequireUserRole", policy => 
         policy.RequireRole(StaticEnum.RoleEnum.User.ToString()));
+    options.AddPolicy("RequireUserRole", policy => 
+        policy.RequireRole(StaticEnum.RoleEnum.Doctor.ToString()));
 });
 
 var app = builder.Build();

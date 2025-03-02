@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VaccineChildren.Infrastructure;
@@ -11,9 +12,11 @@ using VaccineChildren.Infrastructure;
 namespace VaccineChildren.Infrastructure.Migrations
 {
     [DbContext(typeof(VaccineSystemDbContext))]
-    partial class VaccineSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250225154437_UserChange")]
+    partial class UserChange
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,24 +63,24 @@ namespace VaccineChildren.Infrastructure.Migrations
 
             modelBuilder.Entity("PackageVaccine", b =>
                 {
-                    b.Property<Guid>("vaccine_id")
+                    b.Property<Guid>("PackageId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("package_id")
+                    b.Property<Guid>("VaccineId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("vaccine_id", "package_id")
+                    b.HasKey("PackageId", "VaccineId")
                         .HasName("package_vaccine_pkey");
 
-                    b.HasIndex("package_id");
+                    b.HasIndex("VaccineId");
 
                     b.ToTable("package_vaccine", (string)null);
                 });
 
             modelBuilder.Entity("VaccineChildren.Domain.Entities.Batch", b =>
                 {
-                    b.Property<string>("BatchId")
-                        .HasColumnType("text")
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("uuid")
                         .HasColumnName("batch_id");
 
                     b.Property<DateTime?>("ExpirationDate")
@@ -113,10 +116,6 @@ namespace VaccineChildren.Infrastructure.Migrations
                     b.Property<Guid>("ChildId")
                         .HasColumnType("uuid")
                         .HasColumnName("child_id");
-
-                    b.Property<string>("Address")
-                        .HasColumnType("text")
-                        .HasColumnName("address");
 
                     b.Property<string>("AllergiesNotes")
                         .HasColumnType("text")
@@ -656,10 +655,6 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("order_id");
 
-                    b.Property<string>("PreVaccineCheckup")
-                        .HasColumnType("text")
-                        .HasColumnName("pre_vaccine_checkup");
-
                     b.Property<DateTime?>("ScheduleDate")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("schedule_date");
@@ -677,10 +672,6 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("vaccine_type");
-
-                    b.Property<string>("status")
-                        .HasColumnType("text")
-                        .HasColumnName("status");
 
                     b.HasKey("ScheduleId")
                         .HasName("schedule_pkey");
@@ -1081,13 +1072,13 @@ namespace VaccineChildren.Infrastructure.Migrations
                 {
                     b.HasOne("VaccineChildren.Domain.Entities.Package", null)
                         .WithMany()
-                        .HasForeignKey("package_id")
+                        .HasForeignKey("PackageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("VaccineChildren.Domain.Entities.Vaccine", null)
                         .WithMany()
-                        .HasForeignKey("vaccine_id")
+                        .HasForeignKey("VaccineId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

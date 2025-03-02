@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VaccineChildren.Infrastructure;
@@ -11,9 +12,11 @@ using VaccineChildren.Infrastructure;
 namespace VaccineChildren.Infrastructure.Migrations
 {
     [DbContext(typeof(VaccineSystemDbContext))]
-    partial class VaccineSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250302063249_AddPre_Vaccine_Check")]
+    partial class AddPre_Vaccine_Check
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -657,6 +660,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("order_id");
 
                     b.Property<string>("PreVaccineCheckup")
+                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("pre_vaccine_checkup");
 
@@ -677,10 +681,6 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("vaccine_type");
-
-                    b.Property<string>("status")
-                        .HasColumnType("text")
-                        .HasColumnName("status");
 
                     b.HasKey("ScheduleId")
                         .HasName("schedule_pkey");

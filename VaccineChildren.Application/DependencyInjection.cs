@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Application.Services.Impl;
-using VaccineChildren.Domain.Abstraction;
 
 namespace VaccineChildren.Application;
 
@@ -19,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<IPackageService, PackageService>();
         services.AddScoped<IVaccineScheduleService, VaccineScheduleService>();
         services.AddScoped<IBatchService, BatchService>();
+        services.AddScoped<IVaccineCheckupService, VaccineCheckupService>();
         services.AddScoped<IScheduleService, ScheduleService>();
     }
 }

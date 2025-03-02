@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Application.Services;
@@ -10,6 +11,7 @@ namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+// [Authorize(Roles = "staff")]
 public class ScheduleController : BaseController
 {
     private readonly ILogger<ScheduleController> _logger;
@@ -27,6 +29,7 @@ public class ScheduleController : BaseController
     }
 
     [HttpGet]
+    [Authorize(Roles = "staff,doctor")]
     public async Task<IActionResult> GetVaccineSchedule([FromQuery] DateTime fromDate)
     {
         try
@@ -45,6 +48,30 @@ public class ScheduleController : BaseController
             return HandleException(e, nameof(ScheduleController));
         }
     }
+    [HttpPut("check-in/{scheduleId}")]
+    [Authorize(Roles = "staff,doctor")]
+    public async Task<IActionResult> UpdateToCheckInStatus([FromRoute] Guid scheduleId)
+    {
+        try
+        {
+            var result = await _vaccineScheduleService.UpdateToCheckInStatusAsync(scheduleId);
+        
+            if (!result)
+            {
+                return BadRequest(BaseResponse<string>.BadRequestResponse(
+                    "Failed to update schedule status. Schedule may not exist or is not in Upcoming status."));
+            }
+        
+            return Ok(BaseResponse<string>.OkResponse("Schedule status updated to Check-in successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("{Classname} - Error updating schedule status to Check-in: {Message}", 
+                nameof(ScheduleController), ex.Message);
+            return HandleException(ex, nameof(ScheduleController));
+        }
+    }
+    
     
     [HttpPost]
     public async Task<IActionResult> GenerateTemporarySchedule([FromBody] ScheduleReq request)

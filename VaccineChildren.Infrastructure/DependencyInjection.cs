@@ -23,7 +23,9 @@ public static class DependencyInjection
         services.AddSingleton(databaseSettings);
         services.AddDatabase(databaseSettings);
 
-        var redisSettings = new RedisConnection();
+        var redisSettings = new RedisConnection(     
+            services.BuildServiceProvider().GetRequiredService<ILogger<RedisConnection>>()
+        );
         configuration.GetSection("RedisConnection").Bind(redisSettings);
         services.AddSingleton(redisSettings);
         services.AddRedis(redisSettings);

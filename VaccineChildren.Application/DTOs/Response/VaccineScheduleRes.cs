@@ -2,6 +2,7 @@
 
 public class VaccineScheduleRes
 {
+    public Guid ScheduleId { get; set; }
     public string ChildrenName { get; set; }
     public string VaccineName { get; set; }
     public string ScheduleDate { get; set; } = string.Empty;

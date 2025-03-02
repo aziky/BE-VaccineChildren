@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using VaccineChildren.Domain.Entities;
 
@@ -119,6 +117,7 @@ public partial class VaccineSystemDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Address).HasColumnName("address");
 
             entity.HasOne(d => d.User).WithMany(p => p.Children)
                 .HasForeignKey(d => d.UserId)
@@ -389,7 +388,9 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
-
+            entity.Property(e=>e.MaxAge).HasColumnName("max_age");
+            entity.Property(e=>e.MinAge).HasColumnName("min_age");
+            entity.Property(e=>e.Unit).HasColumnName("unit");
             entity.HasMany(d => d.Vaccines)
                 .WithMany(p => p.Packages)
                 .UsingEntity<Dictionary<string, object>>(
@@ -511,6 +512,8 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.VaccineType)
                 .HasMaxLength(255)
                 .HasColumnName("vaccine_type");
+            entity.Property(e => e.PreVaccineCheckup).HasColumnName("pre_vaccine_checkup");
+            entity.Property(e =>e.status).HasColumnName("status");
 
             entity.HasOne(d => d.AdministeredByNavigation).WithMany(p => p.Schedules)
                 .HasForeignKey(d => d.AdministeredBy)
@@ -630,12 +633,6 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.UserName)
                 .HasMaxLength(100)
                 .HasColumnName("user_name");
-            entity.Property((e=>e.EmailVerificationToken))
-                .HasMaxLength(256)
-                .HasColumnName("email_verification_token");
-            entity.Property(e => e.TokenExpiry)
-                .HasColumnType("timestamp with time zone")
-                .HasColumnName("token_expiry");
             entity.Property(e => e.IsVerified).HasColumnName("is_verified");
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)

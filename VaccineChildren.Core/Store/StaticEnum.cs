@@ -19,6 +19,7 @@ public static class StaticEnum
         [CustomName("manager")] Manager,
         [CustomName("staff")] Staff,
         [CustomName("user")] User,
+        [CustomName("doctor")] Doctor,
     }
 
     public enum StatusEnum
@@ -30,7 +31,7 @@ public static class StaticEnum
     public enum PaymentStatusEnum
     {
         [CustomName("pending")] Pending,
-        [CustomName("completed")] Completed,
+        [CustomName("paid")] Paid,
         [CustomName("cancelled")] Cancelled,
         [CustomName("failed")] Failed
     }
@@ -51,6 +52,8 @@ public static class StaticEnum
     {
         [CustomName("upcoming")] Upcoming,
         [CustomName("completed")] Completed,
+        [CustomName("check-in")] CheckIn,
+        [CustomName("vaccinated")] Vaccinated,
     }
     public enum EmailTemplateEnum
     {

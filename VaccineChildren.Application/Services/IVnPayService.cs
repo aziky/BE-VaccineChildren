@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using VaccineChildren.Domain.Models;
 
-namespace VaccineChildren.Domain.Abstraction;
+namespace VaccineChildren.Application.Services;
 
 public interface IVnPayService
 {

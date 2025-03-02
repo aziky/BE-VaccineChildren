@@ -227,18 +227,11 @@ namespace VaccineChildren.Infrastructure.Migrations
                     created_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     updated_by = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    status = table.Column<string>(type: "text", maxLength: 50, nullable: false),
-                    RoleId = table.Column<int>(type: "integer", nullable: true)
+                    status = table.Column<string>(type: "text", maxLength: 50, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("staff_pkey", x => x.staff_id);
-                    table.ForeignKey(
-                        name: "FK_staff_roles_RoleId",
-                        column: x => x.RoleId,
-                        principalTable: "roles",
-                        principalColumn: "role_id",
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_staff_users_staff_id",
                         column: x => x.staff_id,

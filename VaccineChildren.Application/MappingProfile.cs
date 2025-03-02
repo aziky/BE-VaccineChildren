@@ -62,6 +62,10 @@ public class MappingProfile : Profile
         CreateMap<User, GetUserRes>()
             .ForMember(dest => dest.ListChildRes, opt => opt.MapFrom(src => src.Children));
 
+        CreateMap<Child, GetChildRes>()
+            .ForMember(dest => dest.VaccinatedInformation, opt => opt.MapFrom(src => src.Schedules));
+
+        CreateMap<Schedule, GetChildRes.VaccinatedInfor>();
         CreateMap<Child, GetChildRes>();
         CreateMap<ScheduleReq, Schedule>().ReverseMap();
     }

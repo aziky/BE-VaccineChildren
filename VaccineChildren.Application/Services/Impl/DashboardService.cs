@@ -88,7 +88,7 @@ public class DashboardService : IDashboardService
             var paymentRepository = _unitOfWork.GetRepository<Payment>();
             IList<Payment> paymentList = await paymentRepository.GetAllAsync(query => query.Where(p =>
                 p.CreatedAt.Value.Year == year
-                && p.PaymentStatus.ToLower() == StaticEnum.PaymentStatusEnum.Completed.Name().ToLower())
+                && p.PaymentStatus.ToLower() == StaticEnum.PaymentStatusEnum.Paid.Name().ToLower())
             );
 
             if (paymentList.Count == 0)
