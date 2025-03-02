@@ -36,8 +36,7 @@ public class VaccineScheduleService : IVaccineScheduleService
                     // Get "Upcoming" schedules regardless of date
                     (s.status == StaticEnum.ScheduleStatusEnum.Upcoming.Name() && s.ScheduleDate.HasValue) ||
                     // Get other statuses only from the specified date
-                    (s.status != StaticEnum.ScheduleStatusEnum.Upcoming.Name() && s.ScheduleDate.HasValue &&
-                     s.ScheduleDate.Value >= fromDate)
+                    (s.status != StaticEnum.ScheduleStatusEnum.Upcoming.Name() && s.ActualDate.Value >= fromDate)
                 )
                 .OrderBy(s => s.ScheduleDate)
                 .ToList();
@@ -104,6 +103,7 @@ public class VaccineScheduleService : IVaccineScheduleService
             // Update the status
             schedule.status = StaticEnum.ScheduleStatusEnum.CheckIn.Name();
             schedule.UpdatedAt = DateTime.UtcNow.ToLocalTime();
+            schedule.ActualDate = schedule.UpdatedAt;
 
             await _unitOfWork.SaveChangeAsync();
 
