@@ -24,6 +24,7 @@ public class ScheduleController : BaseController
     }
 
     [HttpGet]
+    [Authorize(Roles = "staff,doctor")]
     public async Task<IActionResult> GetVaccineSchedule([FromQuery] DateTime fromDate)
     {
         try
@@ -43,7 +44,7 @@ public class ScheduleController : BaseController
         }
     }
     [HttpPut("check-in/{scheduleId}")]
-    [Authorize(Roles = "staff")]
+    [Authorize(Roles = "staff,doctor")]
     public async Task<IActionResult> UpdateToCheckInStatus([FromRoute] Guid scheduleId)
     {
         try
