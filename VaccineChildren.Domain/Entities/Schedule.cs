@@ -31,6 +31,7 @@ public partial class Schedule
     public virtual Child? Child { get; set; }
 
     public virtual Order? Order { get; set; }
+    public string PreVaccineCheckup { get; set; }
 
     public virtual ICollection<VaccineReaction> VaccineReactions { get; set; } = new List<VaccineReaction>();
 }
