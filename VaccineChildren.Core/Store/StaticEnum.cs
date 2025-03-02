@@ -31,7 +31,7 @@ public static class StaticEnum
     public enum PaymentStatusEnum
     {
         [CustomName("pending")] Pending,
-        [CustomName("completed")] Completed,
+        [CustomName("paid")] Paid,
         [CustomName("cancelled")] Cancelled,
         [CustomName("failed")] Failed
     }

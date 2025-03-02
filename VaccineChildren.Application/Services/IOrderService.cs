@@ -1,8 +1,11 @@
-﻿using VaccineChildren.Application.DTOs.Request;
+﻿using Microsoft.AspNetCore.Http;
+using VaccineChildren.Application.DTOs.Request;
 
 namespace VaccineChildren.Application.Services;
 
 public interface IOrderService
 {
-     Task CreateOrderAsync(CreateOrderReq request);
+     Task<string> CreateOrderAsync(CreateOrderReq request, HttpContext httpContext);
+
+     Task<bool> HandleVnPayResponse(IQueryCollection collection);
 }
