@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Application.Services.Impl;
+using VaccineChildren.Domain.Abstraction;
 
 namespace VaccineChildren.Application;
 

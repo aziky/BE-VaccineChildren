@@ -14,8 +14,6 @@ public partial class Child
 
     public string? Gender { get; set; }
     
-    public string? Address { get; set; }
-
     public string? BloodType { get; set; }
 
     public string? AllergiesNotes { get; set; }
