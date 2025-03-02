@@ -52,6 +52,8 @@ public static class StaticEnum
     {
         [CustomName("upcoming")] Upcoming,
         [CustomName("completed")] Completed,
+        [CustomName("check-in")] CheckIn,
+        [CustomName("vaccinated")] Vaccinated,
     }
     public enum EmailTemplateEnum
     {

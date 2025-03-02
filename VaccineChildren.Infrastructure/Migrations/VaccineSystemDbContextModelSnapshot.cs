@@ -657,7 +657,6 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("order_id");
 
                     b.Property<string>("PreVaccineCheckup")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("pre_vaccine_checkup");
 
@@ -678,6 +677,10 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("vaccine_type");
+
+                    b.Property<string>("status")
+                        .HasColumnType("text")
+                        .HasColumnName("status");
 
                     b.HasKey("ScheduleId")
                         .HasName("schedule_pkey");
