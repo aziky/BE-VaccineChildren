@@ -17,7 +17,7 @@ namespace VaccineChildren.Application.Services.Impl
         private readonly IUnitOfWork _unitOfWork;
         private readonly IGenericRepository<Vaccine> _vaccineRepository;
         private readonly IGenericRepository<Child> _childRepository;
-        private readonly ICacheService _cacheService; // Thêm ICacheService
+        private readonly ICacheService _cacheService; 
 
         public ScheduleService(
             ILogger<IScheduleService> logger,

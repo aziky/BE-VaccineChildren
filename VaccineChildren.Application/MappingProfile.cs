@@ -63,5 +63,6 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.ListChildRes, opt => opt.MapFrom(src => src.Children));
 
         CreateMap<Child, GetChildRes>();
+        CreateMap<ScheduleReq, Schedule>().ReverseMap();
     }
 }
