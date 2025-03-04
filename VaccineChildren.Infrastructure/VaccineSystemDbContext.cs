@@ -106,6 +106,8 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.FullName)
                 .HasMaxLength(100)
                 .HasColumnName("full_name");
+            entity.Property(e => e.Address)
+                .HasColumnName("address");
             entity.Property(e => e.Gender)
                 .HasMaxLength(10)
                 .HasColumnName("gender");
