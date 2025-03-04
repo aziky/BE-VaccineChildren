@@ -97,8 +97,7 @@ public class ScheduleController : BaseController
             {
                 ChildrenId = s.ChildId ?? Guid.Empty,
                 VaccineType = s.VaccineType ?? "Unknown",
-                ScheduleDate = s.ScheduleDate?.ToString("yyyy-MM-dd") ?? string.Empty,
-                ScheduleStatus = s.IsVaccinated == true ? "Vaccinated" : "Pending"
+                ScheduleDate = s.ScheduleDate?.ToString("yyyy-MM-dd") ?? string.Empty
             }).ToList();
 
             return Ok(BaseResponse<List<ScheduleRes>>.OkResponse(scheduleResponses,
