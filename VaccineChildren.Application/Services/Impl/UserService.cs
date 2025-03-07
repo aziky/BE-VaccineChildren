@@ -386,7 +386,6 @@ public class UserService : IUserService
         {
             _logger.LogInformation("Start get user profile with user id {}", userId);
             var userRepository = _unitOfWork.GetRepository<User>();
-            var schedule = _unitOfWork.GetRepository<Schedule>();
 
             var user = await userRepository.GetAllAsync(query => query.Include(u => u.Children).ThenInclude(c => c.Schedules)
                     .Where(u => u.UserId.ToString().Equals(userId)));

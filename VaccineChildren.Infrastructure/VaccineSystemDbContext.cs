@@ -708,7 +708,7 @@ public partial class VaccineSystemDbContext : DbContext
 
             entity.ToTable("vaccine_manufactures");
 
-            entity.HasIndex(e => e.VaccineId, "vaccine_manufactures_vaccine_id_key").IsUnique();
+            entity.HasIndex(e => e.VaccineId, "vaccine_manufactures_vaccine_id_key");
 
             entity.Property(e => e.ManufacturerId).HasColumnName("manufacturer_id");
             entity.Property(e => e.VaccineId).HasColumnName("vaccine_id");
