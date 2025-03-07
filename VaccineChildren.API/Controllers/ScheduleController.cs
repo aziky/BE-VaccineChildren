@@ -15,12 +15,12 @@ namespace VaccineChildren.API.Controllers;
 public class ScheduleController : BaseController
 {
     private readonly ILogger<ScheduleController> _logger;
-    private readonly IVaccineScheduleService _vaccineScheduleService;
+    private readonly IStaffScheduleService _vaccineScheduleService;
     private readonly IScheduleService _scheduleService;
 
     public ScheduleController(
         ILogger<ScheduleController> logger, 
-        IVaccineScheduleService vaccineScheduleService,
+        IStaffScheduleService vaccineScheduleService,
         IScheduleService scheduleService)
     {
         _logger = logger;
