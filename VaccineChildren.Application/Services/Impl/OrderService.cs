@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -18,15 +19,17 @@ public class OrderService : IOrderService
     private readonly IVnPayService _vnPayService;
     private readonly IServiceProvider _serviceProvider;
     private readonly ICacheService _cacheService;
+    private readonly IEmailService _emailService;
 
     public OrderService(ILogger<OrderService> logger, IUnitOfWork unitOfWork, IVnPayService vnPayService,
-        IServiceProvider serviceProvider, ICacheService cacheService)
+        IServiceProvider serviceProvider, ICacheService cacheService, IEmailService emailService)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
         _vnPayService = vnPayService;
         _serviceProvider = serviceProvider;
         _cacheService = cacheService;
+        _emailService = emailService;
     }
 
     public async Task<string> CreateOrderAsync(CreateOrderReq request, HttpContext httpContext)
@@ -149,7 +152,10 @@ public class OrderService : IOrderService
             
             var paymentRepository = unitOfWork.GetRepository<Payment>();
             var orderRepository = unitOfWork.GetRepository<Order>();
-            var payment = await paymentRepository.GetByIdAsync(Guid.Parse(orderInfo.PaymentId));
+            var listPayment = await paymentRepository.GetAllAsync(query => query
+                .Include(p => p.User).Include(p => p.Order).ThenInclude(o => o.Child)
+                .Where(p => p.PaymentId.ToString() == orderInfo.PaymentId));
+            var payment = listPayment.FirstOrDefault();
             unitOfWork.BeginTransaction();
 
             payment.UpdatedAt = DateTime.Now;
@@ -184,6 +190,8 @@ public class OrderService : IOrderService
             await paymentRepository.UpdateAsync(payment);
             await unitOfWork.SaveChangeAsync();
             unitOfWork.CommitTransaction();
+
+            await SendEmail(payment);
         }
         catch (Exception e)
         {
@@ -241,4 +249,32 @@ public class OrderService : IOrderService
 
         throw new ArgumentException("Invalid input format.");
     }
+    
+    private async Task SendEmail(Payment payment)
+    {
+        try
+        {
+            _logger.LogInformation("Start sending email to customer {}", payment.User.FullName);
+            var param = new Dictionary<string, string>()
+            {
+                { "Customer Name", payment.User.UserName  },
+                { "Appointment Date", payment.Order.OrderDate?.ToString("dd-MM-yyyy") ?? "N/A"},
+                { "Children Name", payment.Order.Child.FullName},
+                { "Phone Number", payment.User.Phone},
+                {"Payment ID", payment.PaymentId.ToString()},
+                {"Payment Amount", payment.Amount.ToString()},
+                {"Payment Method", payment.PaymentMethod}
+            };
+            await _emailService.SendEmailAsync(payment.User.Email, payment.User.FullName,
+                StaticEnum.EmailTemplateEnum.AppointmentConfirmation.Id(), param);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Error at send mail after payment cause by {}", e.Message);
+            throw;
+        }
+    }
+    
+    
+    
 }
