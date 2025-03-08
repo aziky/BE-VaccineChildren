@@ -73,4 +73,10 @@ public static class StaticEnum
         [CustomId(4)]
         AppointmentConfirmation
     }
+
+    public enum VnpResponseCode
+    {
+        [CustomName("24")] Cancelled,
+        [CustomName("00")] Completed = 00,
+    }
 }
