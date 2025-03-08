@@ -17,6 +17,6 @@ namespace VaccineChildren.Application.Services
         Task<IEnumerable<VaccineRes>> GetAllVaccinesForEachAge(int minAge, int maxAge, string unit);
 
         Task<IEnumerable<VaccineRes>> GetVaccinesByNameDifferentManufacturers(string vaccineName);
-
+        Task<List<Vaccine>> GetAllVaccines();
     }
 }

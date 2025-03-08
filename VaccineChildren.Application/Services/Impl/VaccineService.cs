@@ -312,5 +312,11 @@ namespace VaccineChildren.Application.Services.Impl
                 throw;
             }
         }
+
+        public async Task<List<Vaccine>> GetAllVaccines()
+        {
+            var list =  await _vaccineRepository.GetAllAsync(query => query.Include(v => v.VaccineManufactures).ThenInclude(vm => vm.Manufacturer));
+            return list.ToList();
+        }
     }
 }
