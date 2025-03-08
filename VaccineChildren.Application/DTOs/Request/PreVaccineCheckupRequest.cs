@@ -18,5 +18,6 @@ public class PreVaccineCheckupRequest
     public string OtherDiseases { get; set; }
     public string CurrentMedications { get; set; }
     public string PreviousVaccineReactions { get; set; }
+    public string BatchId { get; set; }
 
 }
