@@ -131,7 +131,7 @@ public class UserService : IUserService
         string verificationUrl = $"{_configuration["AppUrl"]}/api/User/verify-email?token={verificationToken}&email={Uri.EscapeDataString(user.Email)}";
     
         // Get the email template
-        const int EMAIL_VERIFICATION_TEMPLATE_ID = 1; // Your template ID
+        var templateId = StaticEnum.EmailTemplateEnum.EmailVerification.Id();
     
         var templateData = new Dictionary<string, string>
         {
@@ -144,7 +144,7 @@ public class UserService : IUserService
         await _emailService.SendEmailAsync(
             user.Email,
             user.UserName,
-            EMAIL_VERIFICATION_TEMPLATE_ID,
+            templateId,
             templateData
         );
     }
