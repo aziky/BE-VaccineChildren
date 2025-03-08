@@ -489,12 +489,12 @@ public partial class VaccineSystemDbContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("schedule_id");
             entity.Property(e => e.ActualDate)
-                .HasColumnType("timestamp without time zone")
+                .HasColumnType("timestamp with time zone")
                 .HasColumnName("actual_date");
             entity.Property(e => e.AdministeredBy).HasColumnName("administered_by");
             entity.Property(e => e.ChildId).HasColumnName("child_id");
             entity.Property(e => e.CreatedAt)
-                .HasColumnType("timestamp without time zone")
+                .HasColumnType("timestamp with time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy)
                 .HasMaxLength(255)
@@ -502,10 +502,10 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.IsVaccinated).HasColumnName("is_vaccinated");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.ScheduleDate)
-                .HasColumnType("timestamp without time zone")
+                .HasColumnType("timestamp with time zone")
                 .HasColumnName("schedule_date");
             entity.Property(e => e.UpdatedAt)
-                .HasColumnType("timestamp without time zone")
+                .HasColumnType("timestamp with time zone")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
