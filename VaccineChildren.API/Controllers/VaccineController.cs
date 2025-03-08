@@ -204,7 +204,7 @@ namespace VaccineChildren.API.Controllers
             try
             {
                 var vaccines = await _vaccineService.GetAllVaccines();
-                return Ok(BaseResponse<List<Vaccine>>.OkResponse(vaccines, "Vaccines retrieved successfully"));
+                return Ok(BaseResponse<IList<VaccineRes>>.OkResponse(vaccines, "Vaccines retrieved successfully"));
             }
             catch (Exception e)
             {

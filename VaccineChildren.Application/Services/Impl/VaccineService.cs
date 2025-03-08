@@ -313,10 +313,10 @@ namespace VaccineChildren.Application.Services.Impl
             }
         }
 
-        public async Task<List<Vaccine>> GetAllVaccines()
+        public async Task<IList<VaccineRes>> GetAllVaccines()
         {
-            var list =  await _vaccineRepository.GetAllAsync(query => query.Include(v => v.VaccineManufactures).ThenInclude(vm => vm.Manufacturer));
-            return list.ToList();
+            var listVaccine =  await _vaccineRepository.GetAllAsync();
+            return _mapper.Map<IList<VaccineRes>>(listVaccine);
         }
     }
 }
