@@ -23,7 +23,6 @@ public class GoogleAuthService : IGoogleAuthService
         {
             var response = await _httpClient.GetAsync($"{_googleApiUrl}{idToken}");
             response.EnsureSuccessStatusCode();
-            
             var content = await response.Content.ReadAsStringAsync();
             var userInfo = JsonSerializer.Deserialize<GoogleUserInfo>(content, new JsonSerializerOptions 
             { 
@@ -38,4 +37,5 @@ public class GoogleAuthService : IGoogleAuthService
             throw new AuthenticationException("Failed to verify Google token", ex);
         }
     }
+    
 }

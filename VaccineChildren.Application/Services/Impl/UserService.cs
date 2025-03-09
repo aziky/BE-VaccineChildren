@@ -147,11 +147,14 @@ public class UserService : IUserService
         // Nếu email chưa có trong hệ thống, đăng ký người dùng mới
         if (user == null)
         {
+            string randomPassword = Guid.NewGuid().ToString() + Guid.NewGuid().ToString();
+            string hashedPassword = _rsaService.Encrypt(randomPassword);
             user = new User
             {
                 Email = googleUserInfo.Email,
-                UserName = googleUserInfo.Name,
-                FullName = googleUserInfo.Name,
+                UserName = request.Username,
+                Password = hashedPassword,
+                FullName = request.Username,
                 IsVerified = googleUserInfo.VerifiedEmail,
                 CreatedAt = DateTime.UtcNow.ToLocalTime(),
                 CreatedBy = "Google Auth"
@@ -180,7 +183,7 @@ public class UserService : IUserService
         // Tạo response
         var response = _mapper.Map<UserRes>(user);
         response.Token = token;
-        response.RoleName = user.Role?.RoleName ?? "User";
+        response.RoleName = user.Role?.RoleName;
         
         // Cache thông tin người dùng
         string cacheKey = $"user_{user.Email}";
