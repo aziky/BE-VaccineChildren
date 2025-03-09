@@ -31,10 +31,11 @@ public class MappingProfile : Profile
                 MappingHelpers.SerializeDescription(src.Description)));
 
         // Ánh xạ Vaccine sang VaccineRes
+        // Update the mapping from Vaccine to VaccineRes
         CreateMap<Vaccine, VaccineRes>()
             .ForMember(dest => dest.VaccineId, opt => opt.MapFrom(src => src.VaccineId.ToString()))
-            .ForMember(dest => dest.Manufacturer, opt => opt.MapFrom(src => 
-                src.VaccineManufactures.FirstOrDefault() != null ? src.VaccineManufactures.FirstOrDefault().Manufacturer : null))
+            .ForMember(dest => dest.Manufacturers, opt => opt.MapFrom(src => 
+                src.VaccineManufactures.Select(vm => vm.Manufacturer).ToList()))
             .ForMember(dest => dest.Price, opt => opt.MapFrom(src => 
                 src.VaccineManufactures.FirstOrDefault() != null ? src.VaccineManufactures.FirstOrDefault().Price : 0m))
             .ForMember(dest => dest.Description, opt => opt.MapFrom(src => 
@@ -54,7 +55,7 @@ public class MappingProfile : Profile
         CreateMap<Batch, BatchRes>();
 
         CreateMap<VaccineManufacture, VaccineRes>()
-            .ForMember(dest => dest.Manufacturer, opt => opt.MapFrom(src => src.Manufacturer))
+            .ForMember(dest => dest.Manufacturers, opt => opt.MapFrom(src => src.Manufacturer))
             .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price ?? 0))
             .ForMember(dest => dest.VaccineId, opt => opt.MapFrom(src => src.VaccineId.ToString()))
             .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.Vaccine.VaccineName));

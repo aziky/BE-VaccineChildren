@@ -23,6 +23,6 @@ public class VaccineRes
     public string? Unit { get; set; }
     public string? Image { get; set; }
     public bool? IsActive { get; set; }
-    public ManufacturerRes Manufacturer { get; set; }
+    public List<ManufacturerRes> Manufacturers { get; set; } = new List<ManufacturerRes>();
     public decimal Price { get; set; }
 }
