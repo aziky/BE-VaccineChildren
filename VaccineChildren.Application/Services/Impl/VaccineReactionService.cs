@@ -81,7 +81,7 @@ public class VaccineReactionService : IVaccineReactionService
                 ReactionId = reaction.ReactionId,
                 ScheduleId = request.ScheduleId,
                 ChildName = child.FullName,
-                VaccineType = schedule.VaccineType,
+                VaccineId = schedule.VaccineId,
                 Reactions = request.Reactions,
                 OtherReactions = request.OtherReactions,
                 Severity = request.Severity,

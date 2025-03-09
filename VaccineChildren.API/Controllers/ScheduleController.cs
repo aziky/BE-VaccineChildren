@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
@@ -23,14 +24,13 @@ public class ScheduleController : BaseController
     public ScheduleController(
         ILogger<ScheduleController> logger, 
         IStaffScheduleService vaccineScheduleService,
-        IScheduleService scheduleService)
-        IVaccineScheduleService vaccineScheduleService,
         IScheduleService scheduleService,
         IMapper mapper)
     {
         _logger = logger;
         _vaccineScheduleService = vaccineScheduleService;
         _scheduleService = scheduleService;
+        _mapper = mapper;
     }
 
     [HttpGet]
