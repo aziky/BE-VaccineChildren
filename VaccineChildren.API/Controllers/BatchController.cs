@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Requests;
 using VaccineChildren.Application.DTOs.Response;
@@ -12,6 +13,7 @@ namespace VaccineChildren.API.Controllers
 {
     [Route("api/v1/batch")]
     [ApiController]
+    [Authorize (Roles = "manager")]
     public class BatchController : ControllerBase
     {
         private readonly IBatchService _batchService;

@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
@@ -17,15 +18,19 @@ public class ScheduleController : BaseController
     private readonly ILogger<ScheduleController> _logger;
     private readonly IVaccineScheduleService _vaccineScheduleService;
     private readonly IScheduleService _scheduleService;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
 
     public ScheduleController(
         ILogger<ScheduleController> logger, 
         IVaccineScheduleService vaccineScheduleService,
-        IScheduleService scheduleService)
+        IScheduleService scheduleService,
+        IMapper mapper)
     {
         _logger = logger;
         _vaccineScheduleService = vaccineScheduleService;
         _scheduleService = scheduleService;
+        _mapper = mapper;
     }
 
     [HttpGet]
@@ -93,12 +98,8 @@ public class ScheduleController : BaseController
 
             var schedules = await _scheduleService.GenerateTemporaryScheduleAsync(requests);
 
-            var scheduleResponses = schedules.Select(s => new ScheduleRes
-            {
-                ChildrenId = s.ChildId ?? Guid.Empty,
-                VaccineType = s.VaccineType ?? "Unknown",
-                ScheduleDate = s.ScheduleDate?.ToString("yyyy-MM-dd") ?? string.Empty
-            }).ToList();
+            // Sử dụng AutoMapper thay vì mapping thủ công
+            var scheduleResponses = _mapper.Map<List<ScheduleRes>>(schedules);
 
             return Ok(BaseResponse<List<ScheduleRes>>.OkResponse(scheduleResponses,
                 "Temporary vaccine schedules generated successfully"));

@@ -113,7 +113,7 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
                 return new PreVaccineCheckupResponse
                 {
                     ScheduleId = scheduleId,
-                    VaccineType = schedule.VaccineType,
+                    VaccineId = schedule.VaccineId,
                     ChronicDiseases = new List<string>()
                 };
             }
@@ -129,7 +129,7 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
             {
                 ScheduleId = scheduleId,
                 ChildName = child?.FullName ?? "Unknown",
-                VaccineType = schedule.VaccineType,
+                VaccineId = schedule.VaccineId,
                 Weight = checkupData.Weight,
                 Height = checkupData.Height,
                 Temperature = checkupData.Temperature,

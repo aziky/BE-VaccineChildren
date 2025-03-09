@@ -69,5 +69,6 @@ public class MappingProfile : Profile
         CreateMap<Schedule, GetChildRes.VaccinatedInfor>();
         CreateMap<Child, GetChildRes>();
         CreateMap<ScheduleReq, Schedule>().ReverseMap();
+        
     }
 }

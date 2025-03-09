@@ -673,10 +673,10 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("updated_by");
 
-                    b.Property<string>("VaccineType")
+                    b.Property<Guid>("VaccineId")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("vaccine_type");
+                        .HasColumnType("uuid")
+                        .HasColumnName("vaccine_id");
 
                     b.Property<string>("status")
                         .HasColumnType("text")

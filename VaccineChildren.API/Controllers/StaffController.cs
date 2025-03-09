@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
@@ -8,6 +9,7 @@ namespace VaccineChildren.API.Controllers;
 
 [Route("api/v1/staff")]  
 [ApiController]
+[Authorize (Roles = "admin")]
 public class StaffController : BaseController
 {
     private readonly ILogger<StaffController> _logger;

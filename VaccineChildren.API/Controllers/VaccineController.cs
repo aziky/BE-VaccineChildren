@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
@@ -12,6 +13,7 @@ namespace VaccineChildren.API.Controllers
 {
     [Route("api/v1/vaccine")]
     [ApiController]
+    [Authorize (Roles = "manager")]
     public class VaccineController : BaseController
     {
         private readonly ILogger<VaccineController> _logger;

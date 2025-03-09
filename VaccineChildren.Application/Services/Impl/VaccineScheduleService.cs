@@ -53,7 +53,7 @@ public class VaccineScheduleService : IVaccineScheduleService
                 {
                     ScheduleId = schedule.ScheduleId,
                     ChildrenName = child.FullName,
-                    VaccineName = schedule.VaccineType,
+                    VaccineId = schedule.VaccineId,
                     ScheduleDate = string.Format("{0:dd-MM-yyyy HH:mm}", schedule.ScheduleDate),
                     ScheduleStatus = schedule.status,
                     ParentsName = parentName?.FullName,

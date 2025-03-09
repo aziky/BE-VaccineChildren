@@ -4,7 +4,7 @@ public class PreVaccineCheckupResponse
 {
     public Guid ScheduleId { get; set; }
     public string ChildName { get; set; }
-    public string VaccineType { get; set; }
+    public Guid VaccineId { get; set; }
     
     // Vital signs
     public decimal? Weight { get; set; }
