@@ -42,8 +42,7 @@ public class VaccineReactionService : IVaccineReactionService
             {
                 throw new Exception($"Child not found for schedule {request.ScheduleId}");
             }
-
-            // Tạo bản ghi phản ứng
+            
             var reactionRepository = _unitOfWork.GetRepository<VaccineReaction>();
             var reaction = new VaccineReaction
             {
@@ -58,6 +57,7 @@ public class VaccineReactionService : IVaccineReactionService
                 Severity = request.Severity,
                 OnsetTime = DateTime.UtcNow.ToLocalTime(),
                 CreatedAt = DateTime.UtcNow.ToLocalTime(),
+                ResolvedTime = DateTime.UtcNow.ToLocalTime()
                 // CreatedBy = _currentUserService.GetUserName() ?? "System"
             };
 
