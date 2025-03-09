@@ -3,7 +3,7 @@
 public class GoogleAuthRequest
 {
     public string IdToken { get; set; }
-    public string AccessToken { get; set; }
+    // public string AccessToken { get; set; }
 }
 public class GoogleUserInfo
 {
