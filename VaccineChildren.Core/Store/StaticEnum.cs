@@ -62,7 +62,7 @@ public static class StaticEnum
         EmailVerification,
 
         [CustomName("Password Reset")]
-        [CustomId(2)]
+        [CustomId(4)]
         PasswordReset,
 
         [CustomName("Vaccination Reminder")]
@@ -70,7 +70,13 @@ public static class StaticEnum
         VaccinationReminder,
 
         [CustomName("Appointment Confirmation")]
-        [CustomId(4)]
+        [CustomId(2)]
         AppointmentConfirmation
+    }
+
+    public enum VnpResponseCode
+    {
+        [CustomName("24")] Cancelled,
+        [CustomName("00")] Completed = 00,
     }
 }

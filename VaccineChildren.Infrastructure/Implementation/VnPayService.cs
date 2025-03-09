@@ -35,7 +35,7 @@ public class VnPayService : IVnPayService
         pay.AddRequestData("vnp_CurrCode", "VND");
         pay.AddRequestData("vnp_IpAddr", pay.GetIpAddress(context));
         pay.AddRequestData("vnp_Locale", _configuration["Vnpay:Locale"]);
-        pay.AddRequestData("vnp_OrderInfo", model.PaymentId);
+        pay.AddRequestData("vnp_OrderInfo", $"{model.PaymentId}, {model.ChildId}, {model.InjectionDate}");
         pay.AddRequestData("vnp_OrderType", "other");
         pay.AddRequestData("vnp_ReturnUrl", _configuration["Vnpay:PaymentBackReturnUrl"]);
         pay.AddRequestData("vnp_TxnRef", model.PaymentId);

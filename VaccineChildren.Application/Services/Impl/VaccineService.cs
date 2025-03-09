@@ -312,5 +312,11 @@ namespace VaccineChildren.Application.Services.Impl
                 throw;
             }
         }
+
+        public async Task<IList<VaccineRes>> GetAllVaccines()
+        {
+            var listVaccine =  await _vaccineRepository.GetAllAsync();
+            return _mapper.Map<IList<VaccineRes>>(listVaccine);
+        }
     }
 }
