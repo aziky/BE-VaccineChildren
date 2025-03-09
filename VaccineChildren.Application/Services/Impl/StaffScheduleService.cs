@@ -102,8 +102,8 @@ public class StaffScheduleService : IStaffScheduleService
 
             // Update the status
             schedule.status = StaticEnum.ScheduleStatusEnum.CheckIn.Name();
-            schedule.UpdatedAt = DateTime.UtcNow.ToLocalTime();
-            schedule.ActualDate = schedule.UpdatedAt;
+            schedule.UpdatedAt = DateTime.UtcNow;
+            schedule.ActualDate = DateTime.UtcNow;
 
             await _unitOfWork.SaveChangeAsync();
 
