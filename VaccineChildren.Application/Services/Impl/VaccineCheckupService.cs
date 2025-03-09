@@ -59,10 +59,10 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
             BloodPressure = request.BloodPressure,
             Pulse = request.Pulse,
             ChronicDiseases = request.ChronicDiseases?.ToList() ?? new List<string>(),
-            OtherDiseases = request.OtherDiseases,
+            // OtherDiseases = request.OtherDiseases,
             CurrentMedications = request.CurrentMedications,
             PreviousVaccineReactions = request.PreviousVaccineReactions,
-            MedicalHistory = request.MedicalHistory
+            // MedicalHistory = request.MedicalHistory
         };
         
         // Serialize to JSON

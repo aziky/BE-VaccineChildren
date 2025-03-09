@@ -13,9 +13,9 @@ public class PreVaccineCheckupRequest
     public int Pulse { get; set; }
     
     // Medical history
-    public string MedicalHistory { get; set; }
+    // public string MedicalHistory { get; set; }
     public string[] ChronicDiseases { get; set; }
-    public string OtherDiseases { get; set; }
+    // public string OtherDiseases { get; set; }
     public string CurrentMedications { get; set; }
     public string PreviousVaccineReactions { get; set; }
     public string BatchId { get; set; }
