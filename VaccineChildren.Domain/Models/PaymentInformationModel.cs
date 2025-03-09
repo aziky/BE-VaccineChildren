@@ -8,5 +8,8 @@ public class PaymentInformationModel
     public string Name { get; set; }
     
     public string PaymentId { get; set; }
+    public string ChildId { get; set; }
+    public string InjectionDate { get; set; }
+    
 
 }

@@ -1,4 +1,3 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
@@ -16,13 +15,15 @@ namespace VaccineChildren.API.Controllers;
 public class ScheduleController : BaseController
 {
     private readonly ILogger<ScheduleController> _logger;
-    private readonly IVaccineScheduleService _vaccineScheduleService;
+    private readonly IStaffScheduleService _vaccineScheduleService;
     private readonly IScheduleService _scheduleService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     public ScheduleController(
         ILogger<ScheduleController> logger, 
+        IStaffScheduleService vaccineScheduleService,
+        IScheduleService scheduleService)
         IVaccineScheduleService vaccineScheduleService,
         IScheduleService scheduleService,
         IMapper mapper)
@@ -30,7 +31,6 @@ public class ScheduleController : BaseController
         _logger = logger;
         _vaccineScheduleService = vaccineScheduleService;
         _scheduleService = scheduleService;
-        _mapper = mapper;
     }
 
     [HttpGet]

@@ -8,6 +8,7 @@ using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Core.Base;
+using VaccineChildren.Domain.Entities;
 
 namespace VaccineChildren.API.Controllers
 {
@@ -195,6 +196,20 @@ namespace VaccineChildren.API.Controllers
             catch (Exception e)
             {
                 _logger.LogError("Error while fetching vaccines by name {VaccineName}: {Error}", vaccineName, e.Message);
+                return HandleException(e, "Internal Server Error");
+            }
+        }
+        
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllVaccine()
+        {
+            try
+            {
+                var vaccines = await _vaccineService.GetAllVaccines();
+                return Ok(BaseResponse<IList<VaccineRes>>.OkResponse(vaccines, "Vaccines retrieved successfully"));
+            }
+            catch (Exception e)
+            {
                 return HandleException(e, "Internal Server Error");
             }
         }

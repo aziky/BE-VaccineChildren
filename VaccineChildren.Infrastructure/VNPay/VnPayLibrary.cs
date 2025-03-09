@@ -25,7 +25,7 @@ public class VnPayLibrary
         }
 
         var orderId = vnPay.GetResponseData("vnp_TxnRef");
-        var vnTransactionStatus = Convert.ToInt64(vnPay.GetResponseData("vnp_TransactionStatus"));
+        var vnTransactionStatus = vnPay.GetResponseData("vnp_TransactionStatus");
         var vnPayTranId = vnPay.GetResponseData("vnp_TransactionNo");
         var vnpResponseCode = vnPay.GetResponseData("vnp_ResponseCode");
         var vnpSecureHash =
@@ -46,9 +46,8 @@ public class VnPayLibrary
         {
             Success = true,
             PaymentMethod = "VnPay",
-            OrderDescription = orderInfo,
+            OrderInfo = orderInfo,
             OrderId = orderId.ToString(),
-            PaymentId = orderInfo,
             TransactionId = vnPayTranId,
             Token = vnpSecureHash,
             VnPayResponseCode = vnpResponseCode,
