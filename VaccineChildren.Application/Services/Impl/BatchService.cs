@@ -38,7 +38,6 @@ public class BatchService : IBatchService
 
             var batch = new Batch
             {
-                BatchId = batchReq.BatchId,
                 VaccineId = batchReq.VaccineId.Value,
                 ProductionDate = batchReq.ProductionDate.Value,
                 ExpirationDate = batchReq.ExpirationDate.Value,
@@ -65,7 +64,7 @@ public class BatchService : IBatchService
         {
             _logger.LogInformation("Retrieving batch with ID: {BatchId}", batchId);
 
-            var batch = await _batchRepository.GetByIdAsync(batchId);
+            var batch = await _batchRepository.GetByIdAsync(Guid.Parse(batchId));
             if (batch == null)
             {
                 _logger.LogInformation("Batch not found with ID: {BatchId}", batchId);
@@ -144,7 +143,7 @@ public class BatchService : IBatchService
         {
             _logger.LogInformation("Updating batch with ID: {BatchId}", batchId);
 
-            var batch = await _batchRepository.GetByIdAsync(batchId);
+            var batch = await _batchRepository.GetByIdAsync(Guid.Parse(batchId));
             if (batch == null)
             {
                 _logger.LogInformation("Batch not found with ID: {BatchId}", batchId);
@@ -188,7 +187,7 @@ public class BatchService : IBatchService
         {
             _logger.LogInformation("Deleting batch with ID: {BatchId}", batchId);
 
-            var batch = await _batchRepository.GetByIdAsync(batchId);
+            var batch = await _batchRepository.GetByIdAsync(Guid.Parse(batchId));
             if (batch == null)
             {
                 _logger.LogInformation("Batch not found with ID: {BatchId}", batchId);

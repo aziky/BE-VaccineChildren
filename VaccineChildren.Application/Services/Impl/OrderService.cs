@@ -184,7 +184,7 @@ public class OrderService : IOrderService
                 return false;
             }
 
-            await ChangeScheduleStatus(orderInfo.ChildId, orderInfo.InjectionDate);
+            await ChangeScheduleStatus(orderInfo.ChildId, orderInfo.InjectionDate, payment.OrderId.ToString());
             payment.PaymentStatus = StaticEnum.PaymentStatusEnum.Paid.Name();
 
             await paymentRepository.UpdateAsync(payment);
@@ -203,7 +203,7 @@ public class OrderService : IOrderService
         return true;
     }
 
-    private async Task ChangeScheduleStatus(string childId, string injectionDate)
+    private async Task ChangeScheduleStatus(string childId, string injectionDate, string orderId)
     {
         try
         {
@@ -219,7 +219,7 @@ public class OrderService : IOrderService
             listSchedule.ForEach(s =>
             {
                 s.status = StaticEnum.ScheduleStatusEnum.Upcoming.Name();
-
+                s.OrderId = Guid.Parse(orderId);
                 // Ensure all DateTime fields are converted to UTC
                 s.ScheduleDate = s.ScheduleDate?.ToUniversalTime();
                 s.ActualDate = s.ActualDate?.ToUniversalTime();

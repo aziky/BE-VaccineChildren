@@ -563,6 +563,8 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasColumnType("text") 
                 .HasColumnName("status");
+            entity.HasOne(d => d.User).WithOne(p => p.Staff).HasForeignKey<Staff>(d => d.StaffId);
+
         });
 
         modelBuilder.Entity<Template>(entity =>
