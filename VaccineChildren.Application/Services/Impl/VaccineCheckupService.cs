@@ -75,7 +75,7 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
         // Set the doctor who performed the checkup
         schedule.AdministeredBy = request.DoctorId;
         
-        schedule.UpdatedAt = DateTime.UtcNow.ToLocalTime();
+        schedule.UpdatedAt = DateTime.UtcNow;
         schedule.status = StaticEnum.ScheduleStatusEnum.Vaccinated.Name();
         batch.Quantity = batch.Quantity-1;
 
