@@ -40,7 +40,7 @@ jobs:
       run: sleep 5
     - name: Ping Server
       run: |
-        ping ${{ secrets.SERVER_IP }}
+        ping -4 c ${{ secrets.SERVER_IP }}
 
     # Cài đặt SSH Key
     - name: Install SSH Key
