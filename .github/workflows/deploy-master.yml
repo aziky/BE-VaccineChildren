@@ -38,6 +38,9 @@ jobs:
     # Đợi VPN kết nối (5 giây)
     - name: Wait for VPN Connection
       run: sleep 5
+    - name: Ping Server
+      run: |
+        ping ${{ secrets.SERVER_IP }}
 
     # Cài đặt SSH Key
     - name: Install SSH Key
