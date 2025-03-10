@@ -80,8 +80,8 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
         batch.Quantity = batch.Quantity-1;
 
         // schedule.UpdatedBy = schedule.AdministeredBy.;
-        await batchRepository.UpdateAsync(batch);
-        await scheduleRepository.UpdateAsync(schedule);
+        // await batchRepository.UpdateAsync(batch);
+        // await scheduleRepository.UpdateAsync(schedule);
         await _unitOfWork.SaveChangeAsync();
         
         _logger.LogInformation("Pre-vaccine checkup saved successfully for schedule {ScheduleId}", request.ScheduleId);
