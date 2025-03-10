@@ -1,0 +1,60 @@
+name: CI/CD Deploy .NET App
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.402'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Publish
+      run: dotnet publish -c Release -o ./publish
+
+    # 👉 Kết nối VPN trước khi SSH
+    - name: Install OpenVPN & Connect
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openvpn
+        echo "${{ secrets.VPN_CONFIG }}" > vpn-config.ovpn
+        sudo openvpn --config vpn-config.ovpn --daemon
+
+    # Đợi VPN kết nối (5 giây)
+    - name: Wait for VPN Connection
+      run: sleep 5
+
+    # Cài đặt SSH Key
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        known_hosts: ${{ secrets.KNOWN_HOSTS }}
+
+    # Deploy lên server
+    - name: Deploy to Server
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          mkdir -p /var/www/dotnet-app
+          systemctl stop dotnet-app || true
+        EOF
+        scp -r ./publish/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/var/www/dotnet-app/
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          cd /var/www/dotnet-app
+          systemctl start dotnet-app || nohup dotnet VaccineChildren.API.dll &
+        EOF
