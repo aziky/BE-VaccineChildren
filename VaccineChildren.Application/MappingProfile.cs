@@ -67,5 +67,26 @@ public class MappingProfile : Profile
 
         CreateMap<Schedule, GetChildRes.VaccinatedInfor>();
         CreateMap<ScheduleReq, Schedule>().ReverseMap();
+
+        CreateMap<Payment, PaymentHistoryRes>()
+            .ForMember(dest => dest.ChildName, opt => opt.MapFrom(src => src.Order.Child.FullName));
+
+        CreateMap<Schedule, VaccinatedHistory>()
+                   .ForMember(dest => dest.ChildName, opt => opt.MapFrom(src => src.Child.FullName))
+                   .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.VaccineType))
+                   .ForMember(dest => dest.VaccinatedDates, opt => opt.MapFrom(src => new List<VaccinatedDate>
+                   {
+                       new VaccinatedDate 
+                       { 
+                           ScheduleDate = src.ScheduleDate ?? DateTime.MinValue, 
+                           ActualDate = src.ActualDate ?? DateTime.MinValue 
+                       }
+                   }));
+
+       
+               CreateMap<Schedule, VaccinatedDate>()
+                   .ForMember(dest => dest.ScheduleDate, opt => opt.MapFrom(src => src.ScheduleDate))
+                   .ForMember(dest => dest.ActualDate, opt => opt.MapFrom(src => src.ActualDate));
+
     }
 }
