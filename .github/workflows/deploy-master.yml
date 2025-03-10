@@ -1,4 +1,4 @@
-name: CI/CD Deploy .NET App
+name: CI/CD Deploy .NET App with Docker
 
 on:
   push:
@@ -13,20 +13,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '8.0.402'
-
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
-
-    - name: Publish
-      run: dotnet publish -c Release -o ./publish
-
     # 👉 Kết nối VPN trước khi SSH
     - name: Install OpenVPN & Connect
       run: |
@@ -38,9 +24,9 @@ jobs:
     # Đợi VPN kết nối (5 giây)
     - name: Wait for VPN Connection
       run: sleep 5
+
     - name: Ping Server
-      run: |
-        ping -4 c ${{ secrets.SERVER_IP }}
+      run: ping -c 4 ${{ secrets.SERVER_IP }}
 
     # Cài đặt SSH Key
     - name: Install SSH Key
@@ -49,15 +35,19 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         known_hosts: ${{ secrets.KNOWN_HOSTS }}
 
-    # Deploy lên server
+    # 🚀 Deploy lên server và chạy docker-compose
     - name: Deploy to Server
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-          mkdir -p /var/www/dotnet-app
-          systemctl stop dotnet-app || true
-        EOF
-        scp -r ./publish/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/var/www/dotnet-app/
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-          cd /var/www/dotnet-app
-          systemctl start dotnet-app || nohup dotnet VaccineChildren.API.dll &
+          # 📂 Bước 1: Vào thư mục chứa source code
+          cd /home/hoangpham23/BE-VaccineChildren
+
+          # 🔄 Bước 2: Pull source code mới nhất
+          git pull origin master
+
+          # 🛑 Bước 3: Dừng container cũ
+          docker-compose down
+
+          # 🚀 Bước 4: Build lại container mới và chạy
+          docker-compose up --build -d
         EOF
