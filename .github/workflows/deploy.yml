@@ -1,0 +1,90 @@
+name: CI/CD Deploy .NET App
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Setup .NET
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.402'
+
+    # Restore dependencies
+    - name: Restore dependencies
+      run: |
+        echo "Restoring dependencies..."
+        dotnet restore
+        echo "Dependencies restored."
+
+    # Build the project
+    - name: Build
+      run: |
+        echo "Building project..."
+        dotnet build --configuration Release --no-restore
+        echo "Project built."
+
+    # Publish the project
+    - name: Publish
+      run: |
+        echo "Publishing project..."
+        dotnet publish -c Release -o ./publish
+        echo "Project published."
+
+    # 👉 Kết nối VPN trước khi SSH
+    - name: Install OpenVPN & Connect
+      run: |
+        echo "Installing OpenVPN..."
+        sudo apt-get update
+        sudo apt-get install -y openvpn
+        echo "VPN config..."
+        echo "${{ secrets.VPN_CONFIG }}" > vpn-config.ovpn
+        echo "Connecting to VPN..."
+        sudo openvpn --config vpn-config.ovpn --daemon
+        echo "VPN connected."
+
+    # Đợi VPN kết nối (5 giây)
+    - name: Wait for VPN Connection
+      run: |
+        echo "Waiting for VPN to connect..."
+        sleep 5
+        echo "VPN connection established."
+
+    # Cài đặt SSH Key
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        known_hosts: ${{ secrets.KNOWN_HOSTS }}
+
+    # Deploy lên server
+    - name: Deploy to Server
+      run: |
+        echo "Connecting to server..."
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          echo "Creating directory for app..."
+          mkdir -p /home/hoangpham23/BE-VaccineChildren/dotnet-app
+          echo "Stopping dotnet app if running..."
+          systemctl stop dotnet-app || true
+        EOF
+
+        echo "Uploading files to server..."
+        scp -r ./publish/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/home/hoangpham23/BE-VaccineChildren/dotnet-app/
+
+        echo "Starting dotnet app..."
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          cd /home/hoangpham23/BE-VaccineChildren/dotnet-app
+          echo "Starting dotnet app..."
+          systemctl start dotnet-app || nohup dotnet VaccineChildren.API.dll &
+          echo "Dotnet app started."
+        EOF
