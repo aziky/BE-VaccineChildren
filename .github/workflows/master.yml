@@ -1,0 +1,76 @@
+name: CI/CD Deploy .NET App with Docker
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # 👉 Kết nối VPN trước khi SSH
+    - name: Install OpenVPN & Connect
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openvpn
+        echo "${{ secrets.VPN_CONFIG }}" > vpn-config.ovpn
+        sudo openvpn --config vpn-config.ovpn --daemon
+
+    # Đợi VPN kết nối (5 giây)
+    - name: Wait for VPN Connection
+      run: sleep 5
+
+    - name: Ping Server
+      run: ping -c 4 ${{ secrets.SERVER_IP }}
+
+    # Cài đặt SSH Key
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        known_hosts: ${{ secrets.KNOWN_HOSTS }}
+    - name: Verify SSH Key & known_hosts
+      run: |
+        ls -lah ~/.ssh
+        echo "🔍 Checking SSH Private Key..."
+        cat ~/.ssh/id_rsa || echo "❌ Private Key not found!"
+        echo "🔍 Checking known_hosts..."
+        cat ~/.ssh/known_hosts || echo "❌ known_hosts not found!"
+
+
+    # 🚀 Deploy lên server và chạy docker-compose
+    - name: Deploy to Server
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          echo "SSH connected!"
+
+          if [ -d "/home/hoangpham23/BE-VaccineChildren" ]; then
+            cd /home/hoangpham23/BE-VaccineChildren
+          else
+            echo "❌ ERROR: Directory /home/hoangpham23/BE-VaccineChildren not found!"
+            exit 1
+          fi
+
+          echo "⏳ Pulling latest code..."
+          START_TIME=$(date +%s)
+          git pull origin master
+          END_TIME=$(date +%s)
+          echo "git pull completed in $((END_TIME - START_TIME)) seconds."
+
+          echo "⏳ Stopping old containers..."
+          START_TIME=$(date +%s)
+          docker-compose down
+          END_TIME=$(date +%s)
+          echo "docker-compose down completed in $((END_TIME - START_TIME)) seconds."
+
+          echo "⏳ Rebuilding and starting containers..."
+          START_TIME=$(date +%s)
+          docker-compose up --build -d
+          END_TIME=$(date +%s)
+          echo "docker-compose up --build -d completed in $((END_TIME - START_TIME)) seconds."
+        EOF
