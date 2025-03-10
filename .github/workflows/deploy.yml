@@ -82,7 +82,7 @@ jobs:
         scp -r ./publish/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/home/hoangpham23/BE-VaccineChildren/dotnet-app/
 
         echo "Starting dotnet app..."
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+        ssh -t -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
           cd /home/hoangpham23/BE-VaccineChildren/dotnet-app
           echo "Starting dotnet app..."
           systemctl start dotnet-app || nohup dotnet VaccineChildren.API.dll &
