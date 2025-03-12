@@ -7,7 +7,7 @@ using VaccineChildren.Core.Base;
 namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
-// [Authorize("user")]
+[Authorize("user")]
 public class PaymentController : BaseController
 {
     private readonly ILogger<PaymentController> _logger;
