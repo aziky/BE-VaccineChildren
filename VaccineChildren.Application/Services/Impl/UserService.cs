@@ -43,12 +43,11 @@ public class UserService : IUserService
         _httpContextAccessor = httpContextAccessor;
         _googleAuthService = googleAuthService;
     }
-    public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest)
+public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest)
 {
     try
     {
         _logger.LogInformation("Start registering user");
-        _unitOfWork.BeginTransaction();
 
         var userRepository = _unitOfWork.GetRepository<User>();
 
@@ -65,25 +64,17 @@ public class UserService : IUserService
             };
         }
 
+        // Hash the password
         var hashedPassword = _rsaService.Encrypt(registerRequest.Password);
         registerRequest.Password = hashedPassword;
 
-        // Map request to User entity
+        // Map request to User entity (but don't save to DB yet)
         var userEntity = _mapper.Map<User>(registerRequest);
         userEntity.CreatedBy = registerRequest.UserName;
         userEntity.CreatedAt = DateTime.UtcNow.ToLocalTime();
-        
-        // Set email verification status to false and generate verification token
         userEntity.IsVerified = false;
-        // Generate token
-        var verificationToken = Guid.NewGuid().ToString();
-        var expiration = TimeSpan.FromDays(1);
-    
-        // Store in Redis with expiration
-        await _cacheService.SetAsync($"email_verification:{registerRequest.Email}", 
-            new { Token = verificationToken }, expiration);
         
-        // Assign the 'user' role to the new user
+        // Get the user role
         var roleRepository = _unitOfWork.GetRepository<Role>();
         var userRole = await roleRepository.FindByConditionAsync(
             r => r.RoleName.ToLower() == StaticEnum.RoleEnum.User.ToString().ToLower());
@@ -99,15 +90,26 @@ public class UserService : IUserService
         }
 
         userEntity.RoleId = userRole.RoleId;
-
-        await userRepository.InsertAsync(userEntity);
-        await _unitOfWork.SaveChangeAsync();
-
+        
+        // Generate verification token
+        var verificationToken = Guid.NewGuid().ToString();
+        var expiration = TimeSpan.FromDays(1);
+        
+        // Store user information and verification token in Redis
+        var userRegistrationData = new UserRegistrationData
+        {
+            VerificationToken = verificationToken,
+            UserData = userEntity
+        };
+        
+        // Store in Redis with expiration
+        await _cacheService.SetAsync($"pending_registration:{registerRequest.Email}", 
+            userRegistrationData, expiration);
+        
         // Send verification email
         await SendVerificationEmail(userEntity, verificationToken);
 
-        _unitOfWork.CommitTransaction();
-        _logger.LogInformation("User registration successful, verification email sent");
+        _logger.LogInformation("User registration data stored in Redis, verification email sent");
 
         return new RegisterResponse
         {
@@ -118,12 +120,7 @@ public class UserService : IUserService
     catch (Exception e)
     {
         _logger.LogError("Error at register user: {Message}", e.Message);
-        _unitOfWork.RollBack();
         throw new Exception("An error occurred while registering the user", e);
-    }
-    finally
-    {
-        _unitOfWork.Dispose();
     }
 }
     public async Task<UserRes> LoginWithGoogleAsync(GoogleAuthRequest request)
@@ -226,47 +223,47 @@ public class UserService : IUserService
     {
         try
         {
-            // // Get the verification data from Redis
-            // var verificationDataJson = await _cacheService.GetAsync<JsonDocument>($"email_verification:{email}");
-            //
-            // if (verificationDataJson == null)
-            // {
-            //     return new RegisterResponse { Success = false, Message = "Verification link has expired or is invalid" };
-            // }
-            //
-            // // Extract the token safely
-            // var storedToken = verificationDataJson.RootElement.GetProperty("Token").GetString();
-            //
-            // if (storedToken != token)
-            // {
-            //     return new RegisterResponse { Success = false, Message = "Invalid verification token" };
-            // }
-            var verificationData = await _cacheService.GetAsync<EmailVerificationData>($"email_verification:{email}");
-            if (verificationData == null || verificationData.Token != token)
+            // Get the pending registration data from Redis
+            var registrationData = await _cacheService.GetAsync<UserRegistrationData>($"pending_registration:{email}");
+        
+            if (registrationData == null || registrationData.VerificationToken != token)
             {
                 return new RegisterResponse { Success = false, Message = "Invalid or expired verification link" };
             }
         
-            // Update user verification status
-            var userRepository = _unitOfWork.GetRepository<User>();
-            var user = await userRepository.FindByConditionAsync(u => u.Email == email);
+            // Begin transaction to save the user to the database
+            _unitOfWork.BeginTransaction();
         
-            if (user == null)
+            try
             {
-                return new RegisterResponse { Success = false, Message = "User not found" };
+                // Get the User entity from Redis
+                var user = registrationData.UserData;
+            
+                // Set verification status to true
+                user.IsVerified = true;
+            
+                // Save user to database
+                var userRepository = _unitOfWork.GetRepository<User>();
+                await userRepository.InsertAsync(user);
+                await _unitOfWork.SaveChangeAsync();
+            
+                // Remove the pending registration data from Redis
+                await _cacheService.RemoveAsync($"pending_registration:{email}");
+            
+                _unitOfWork.CommitTransaction();
+            
+                return new RegisterResponse { Success = true, Message = "Email verified successfully and account activated" };
             }
-        
-            user.IsVerified = true;
-            user.UpdatedAt = DateTime.UtcNow.ToLocalTime();
-            user.UpdatedBy = "System";
-        
-            await userRepository.UpdateAsync(user);
-            await _unitOfWork.SaveChangeAsync();
-        
-            // Remove the verification token from Redis
-            await _cacheService.RemoveAsync($"email_verification:{email}");
-        
-            return new RegisterResponse { Success = true, Message = "Email verified successfully" };
+            catch (Exception ex)
+            {
+                _unitOfWork.RollBack();
+                _logger.LogError(ex, "Error saving verified user to database for {Email}", email);
+                return new RegisterResponse { Success = false, Message = "Error activating account" };
+            }
+            finally
+            {
+                _unitOfWork.Dispose();
+            }
         }
         catch (Exception ex)
         {
