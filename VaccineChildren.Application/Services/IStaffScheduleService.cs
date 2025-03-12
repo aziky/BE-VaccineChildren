@@ -2,7 +2,7 @@
 
 namespace VaccineChildren.Application.Services;
 
-public interface IVaccineScheduleService
+public interface IStaffScheduleService
 {
     Task<List<VaccineScheduleRes>> GetVaccineScheduleAsync(DateTime fromDate);
     Task<bool> UpdateToCheckInStatusAsync(Guid scheduleId);

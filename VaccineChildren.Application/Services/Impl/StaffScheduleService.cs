@@ -7,12 +7,12 @@ using VaccineChildren.Domain.Entities;
 
 namespace VaccineChildren.Application.Services.Impl;
 
-public class VaccineScheduleService : IVaccineScheduleService
+public class StaffScheduleService : IStaffScheduleService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<VaccineScheduleService> _logger;
+    private readonly ILogger<StaffScheduleService> _logger;
 
-    public VaccineScheduleService(IUnitOfWork unitOfWork, ILogger<VaccineScheduleService> logger)
+    public StaffScheduleService(IUnitOfWork unitOfWork, ILogger<StaffScheduleService> logger)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
@@ -22,7 +22,7 @@ public class VaccineScheduleService : IVaccineScheduleService
     {
         try
         {
-            _logger.LogInformation("{ClassName} - Getting vaccine schedules", nameof(VaccineScheduleService));
+            _logger.LogInformation("{ClassName} - Getting vaccine schedules", nameof(StaffScheduleService));
             var scheduleRepository = _unitOfWork.GetRepository<Schedule>();
             var childrenRepository = _unitOfWork.GetRepository<Child>();
             var userRepository = _unitOfWork.GetRepository<User>();
@@ -53,7 +53,7 @@ public class VaccineScheduleService : IVaccineScheduleService
                 {
                     ScheduleId = schedule.ScheduleId,
                     ChildrenName = child.FullName,
-                    VaccineName = schedule.VaccineType,
+                    VaccineId = schedule.VaccineId,
                     ScheduleDate = string.Format("{0:dd-MM-yyyy HH:mm}", schedule.ScheduleDate),
                     ScheduleStatus = schedule.status,
                     ParentsName = parentName?.FullName,
@@ -72,7 +72,7 @@ public class VaccineScheduleService : IVaccineScheduleService
         catch (Exception e)
         {
             _logger.LogError(
-                $"{nameof(VaccineScheduleService)} - Error at get vaccine schedule async cause by: {e.Message}");
+                $"{nameof(StaffScheduleService)} - Error at get vaccine schedule async cause by: {e.Message}");
             throw;
         }
     }
@@ -82,7 +82,7 @@ public class VaccineScheduleService : IVaccineScheduleService
         try
         {
             _logger.LogInformation("{ClassName} - Updating schedule status to Check-in for schedule {ScheduleId}",
-                nameof(VaccineScheduleService), scheduleId);
+                nameof(StaffScheduleService), scheduleId);
 
             var scheduleRepository = _unitOfWork.GetRepository<Schedule>();
             var schedule = await scheduleRepository.FindByConditionAsync(s => s.ScheduleId == scheduleId);
@@ -102,8 +102,8 @@ public class VaccineScheduleService : IVaccineScheduleService
 
             // Update the status
             schedule.status = StaticEnum.ScheduleStatusEnum.CheckIn.Name();
-            schedule.UpdatedAt = DateTime.UtcNow.ToLocalTime();
-            schedule.ActualDate = schedule.UpdatedAt;
+            schedule.UpdatedAt = DateTime.UtcNow;
+            schedule.ActualDate = DateTime.UtcNow;
 
             await _unitOfWork.SaveChangeAsync();
 
@@ -114,7 +114,7 @@ public class VaccineScheduleService : IVaccineScheduleService
         {
             _logger.LogError(
                 "{ClassName} - Error updating schedule status to Check-in for schedule {ScheduleId}: {Message}",
-                nameof(VaccineScheduleService), scheduleId, e.Message);
+                nameof(StaffScheduleService), scheduleId, e.Message);
             throw;
         }
     }

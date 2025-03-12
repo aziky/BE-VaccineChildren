@@ -97,6 +97,7 @@ namespace VaccineChildren.Application.Services.Impl
             {
                 _logger.LogInformation("Retrieving vaccine with ID: {VaccineId}", vaccineId);
 
+                // Truy vấn vaccine với tất cả manufacturers liên quan
                 var vaccine = await _vaccineRepository.Entities
                     .AsNoTracking()
                     .Include(v => v.VaccineManufactures)
@@ -109,7 +110,27 @@ namespace VaccineChildren.Application.Services.Impl
                     throw new KeyNotFoundException("Vaccine not found");
                 }
 
-                return _mapper.Map<VaccineRes>(vaccine);
+                // Map vaccine sang response DTO
+                var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
+
+                // Đảm bảo Manufacturers được map đầy đủ từ VaccineManufactures
+                if (vaccine.VaccineManufactures != null && vaccine.VaccineManufactures.Any())
+                {
+                    vaccineRes.Manufacturers = vaccine.VaccineManufactures
+                        .Where(vm => vm.Manufacturer != null) // Đảm bảo Manufacturer không null
+                        .Select(vm => _mapper.Map<ManufacturerRes>(vm.Manufacturer))
+                        .Distinct() // Loại bỏ trùng lặp nếu có
+                        .ToList();
+                }
+                else
+                {
+                    vaccineRes.Manufacturers = new List<ManufacturerRes>(); // Trả về list rỗng nếu không có manufacturers
+                }
+
+                _logger.LogInformation("Successfully retrieved vaccine with ID: {VaccineId} with {Count} manufacturers", 
+                    vaccineId, vaccineRes.Manufacturers.Count);
+
+                return vaccineRes;
             }
             catch (Exception e)
             {
@@ -125,20 +146,41 @@ namespace VaccineChildren.Application.Services.Impl
             {
                 _logger.LogInformation("Retrieving all vaccines, page {PageIndex}, size {PageSize}", pageIndex, pageSize);
 
+                // Validate input parameters
+                if (pageIndex < 1) pageIndex = 1;
+                if (pageSize < 1) pageSize = 10;
+
+                // Build the base query
                 var query = _vaccineRepository.Entities
                     .AsNoTracking()
                     .Include(v => v.VaccineManufactures)
                     .ThenInclude(vm => vm.Manufacturer);
 
+                // Get total count
                 var totalCount = await query.CountAsync();
+
+                // Retrieve paginated vaccines and map manually
                 var vaccines = await query
                     .OrderBy(v => v.VaccineName)
                     .Skip((pageIndex - 1) * pageSize)
                     .Take(pageSize)
-                    .ProjectTo<VaccineRes>(_mapper.ConfigurationProvider)
                     .ToListAsync();
 
-                return (vaccines ?? new List<VaccineRes>(), totalCount);
+                // Map to VaccineRes manually to ensure Manufacturers are included
+                var vaccineResList = vaccines.Select(vaccine =>
+                {
+                    var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
+                    vaccineRes.Manufacturers = vaccine.VaccineManufactures?
+                        .Where(vm => vm.Manufacturer != null)
+                        .Select(vm => _mapper.Map<ManufacturerRes>(vm.Manufacturer))
+                        .Distinct()
+                        .ToList() ?? new List<ManufacturerRes>();
+                    return vaccineRes;
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} vaccines out of {TotalCount}", vaccineResList.Count, totalCount);
+
+                return (vaccineResList ?? new List<VaccineRes>(), totalCount);
             }
             catch (Exception e)
             {
@@ -255,21 +297,45 @@ namespace VaccineChildren.Application.Services.Impl
             {
                 _logger.LogInformation("Retrieving vaccines for age range: {MinAge}-{MaxAge} {Unit}", minAge, maxAge, unit);
 
+                // Validate input parameters
+                if (minAge < 0 || maxAge < 0)
+                    throw new ArgumentException("MinAge and MaxAge must be non-negative.");
+                if (minAge > maxAge)
+                    throw new ArgumentException("MinAge cannot be greater than MaxAge.");
+                if (string.IsNullOrWhiteSpace(unit))
+                    throw new ArgumentException("Unit cannot be null or empty.");
+
+                // Build the query with EF Core-compatible string comparison
                 var vaccines = await _vaccineRepository.Entities
                     .AsNoTracking()
                     .Where(v => v.MinAge.HasValue && v.MinAge.Value <= maxAge &&
                                 v.MaxAge.HasValue && v.MaxAge.Value >= minAge &&
-                                v.Unit != null && v.Unit.Equals(unit, StringComparison.OrdinalIgnoreCase))
+                                v.Unit != null && v.Unit.ToLower() == unit.ToLower()) // Thay Equals bằng so sánh đơn giản
                     .Include(v => v.VaccineManufactures)
                     .ThenInclude(vm => vm.Manufacturer)
-                    .ProjectTo<VaccineRes>(_mapper.ConfigurationProvider)
                     .ToListAsync();
 
-                return vaccines ?? new List<VaccineRes>();
+                // Map to VaccineRes manually to ensure Manufacturers are included
+                var vaccineResList = vaccines.Select(vaccine =>
+                {
+                    var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
+                    vaccineRes.Manufacturers = vaccine.VaccineManufactures?
+                        .Where(vm => vm.Manufacturer != null)
+                        .Select(vm => _mapper.Map<ManufacturerRes>(vm.Manufacturer))
+                        .Distinct()
+                        .ToList() ?? new List<ManufacturerRes>();
+                    return vaccineRes;
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} vaccines for age range: {MinAge}-{MaxAge} {Unit}", 
+                    vaccineResList.Count, minAge, maxAge, unit);
+
+                return vaccineResList ?? new List<VaccineRes>();
             }
             catch (Exception e)
             {
-                _logger.LogError("Error while retrieving vaccines for age range {MinAge}-{MaxAge} {Unit}: {Error}", minAge, maxAge, unit, e.Message);
+                _logger.LogError("Error while retrieving vaccines for age range {MinAge}-{MaxAge} {Unit}: {Error}", 
+                    minAge, maxAge, unit, e.Message);
                 throw;
             }
         }
@@ -286,7 +352,6 @@ namespace VaccineChildren.Application.Services.Impl
                     .Where(v => v.VaccineName == vaccineName)
                     .Include(v => v.VaccineManufactures)
                     .ThenInclude(vm => vm.Manufacturer)
-                    .ProjectTo<VaccineRes>(_mapper.ConfigurationProvider)
                     .ToListAsync();
 
                 if (!vaccines.Any())
@@ -295,11 +360,22 @@ namespace VaccineChildren.Application.Services.Impl
                     return new List<VaccineRes>();
                 }
 
-                var result = vaccines
+                // Map the vaccines to VaccineRes objects
+                var vaccineResList = vaccines.Select(vaccine => {
+                    var vaccineRes = _mapper.Map<VaccineRes>(vaccine);
+                    // Ensure each vaccine has its manufacturers correctly mapped
+                    vaccineRes.Manufacturers = vaccine.VaccineManufactures
+                        .Select(vm => _mapper.Map<ManufacturerRes>(vm.Manufacturer))
+                        .ToList();
+                    return vaccineRes;
+                }).ToList();
+
+                // Filter vaccines with different manufacturers
+                var result = vaccineResList
                     .GroupBy(v => v.VaccineName)
-                    .Where(g => g.SelectMany(v => v.Manufacturer != null ? new[] { v.Manufacturer.ManufacturerId } : Array.Empty<Guid>())
-                                .Distinct()
-                                .Count() > 1)
+                    .Where(g => g.SelectMany(v => v.Manufacturers.Select(m => m.ManufacturerId))
+                        .Distinct()
+                        .Count() > 1)
                     .SelectMany(g => g)
                     .ToList();
 

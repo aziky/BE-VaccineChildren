@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using VaccineChildren.Application.DTOs.Request;
+using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Core.Exceptions;
 using VaccineChildren.Domain.Abstraction;
 using VaccineChildren.Domain.Entities;
@@ -32,7 +33,7 @@ namespace VaccineChildren.Application.Services.Impl
             _childRepository = _unitOfWork.GetRepository<Child>();
         }
 
-        public async Task<IEnumerable<Schedule>> GenerateTemporaryScheduleAsync(List<ScheduleReq> requests)
+        public async Task<IEnumerable<ScheduleRes>> GenerateTemporaryScheduleAsync(List<ScheduleReq> requests)
         {
             ValidateRequests(requests);
 
@@ -44,11 +45,24 @@ namespace VaccineChildren.Application.Services.Impl
                 allSchedules.AddRange(await ProcessRequestAsync(request, children, vaccines));
             }
 
-            _logger.LogInformation("Generated and cached {ScheduleCount} schedules successfully", allSchedules.Count);
-            return allSchedules;
+            // Convert sang ScheduleRes chỉ với VaccineId
+            var response = allSchedules.Select(s => new ScheduleRes
+            {
+                ChildId = s.ChildId.Value,
+                VaccineId = vaccines.First(v => v.Value.VaccineId == s.VaccineId).Key,
+                ScheduleDate = s.ScheduleDate?.ToString("yyyy-MM-dd") ?? ""
+            });
+
+            string cacheKey = $"schedules:batch:{Guid.NewGuid()}";
+            await _cacheService.SetAsync(cacheKey, allSchedules, TimeSpan.FromHours(1));
+
+            _logger.LogInformation("Generated and cached {ScheduleCount} schedules successfully with key {CacheKey}", 
+                allSchedules.Count, cacheKey);
+
+            return response;
         }
 
-        public async Task<IEnumerable<Schedule>> GenerateTemporaryScheduleAsync(Guid vaccineId, Guid childId, DateTime startDate)
+        public async Task<IEnumerable<ScheduleRes>> GenerateTemporaryScheduleAsync(Guid vaccineId, Guid childId, DateTime startDate)
         {
             var request = new ScheduleReq 
             { 
@@ -96,8 +110,12 @@ namespace VaccineChildren.Application.Services.Impl
             {
                 var vaccine = GetVaccine(vaccines, vaccineId);
                 ValidateVaccine(vaccine, childAgeInMonths);
-                requestSchedules.AddRange(GenerateSchedule(vaccine, child, request.StartDate));
-                _logger.LogInformation("Temporary schedule generated for vaccine {VaccineId} and child {ChildId}", vaccineId, request.ChildId);
+            
+                var schedules = GenerateSchedule(vaccine, child, request.StartDate, vaccineId);
+                requestSchedules.AddRange(schedules);
+            
+                _logger.LogInformation("Temporary schedule generated for vaccine {VaccineId} and child {ChildId}", 
+                    vaccineId, request.ChildId);
             }
 
             string cacheKey = $"schedule:{request.ChildId}:{request.StartDate:yyyyMMddHHmmss}";
@@ -138,7 +156,7 @@ namespace VaccineChildren.Application.Services.Impl
                 throw new ValidationException($"Child's age ({childAgeInMonths} months) exceeds the maximum age ({vaccine.MaxAge.Value} months) allowed for vaccine {vaccine.VaccineName}.");
         }
 
-        private IEnumerable<Schedule> GenerateSchedule(Vaccine vaccine, Child child, DateTime startDate)
+        private IEnumerable<Schedule> GenerateSchedule(Vaccine vaccine, Child child, DateTime startDate, Guid vaccineId)
         {
             var numberOfDoses = vaccine.NumberDose.GetValueOrDefault(1);
             var durationInDays = vaccine.Duration.GetValueOrDefault(0);
@@ -150,7 +168,7 @@ namespace VaccineChildren.Application.Services.Impl
             {
                 ScheduleId = Guid.NewGuid(),
                 ChildId = child.ChildId,
-                VaccineType = vaccine.VaccineName,
+                VaccineId = vaccine.VaccineId, // Giữ lại để mapping, có thể thêm VaccineId nếu cần
                 ScheduleDate = startDate.AddDays((dose - 1) * durationInDays),
                 IsVaccinated = false,
                 CreatedAt = DateTime.UtcNow,

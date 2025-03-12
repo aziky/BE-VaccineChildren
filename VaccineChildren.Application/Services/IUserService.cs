@@ -13,5 +13,5 @@ public interface IUserService
     Task CreateChildAsync(CreateChildReq request);
     Task<GetChildRes> GetChildByChildIdAsync(string childId);
     Task<GetUserRes> GetUserByUserIdAsync(string userId);
-
+    Task<UserRes> LoginWithGoogleAsync(GoogleAuthRequest request);
 }

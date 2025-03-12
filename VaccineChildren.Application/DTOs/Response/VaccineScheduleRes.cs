@@ -4,7 +4,7 @@ public class VaccineScheduleRes
 {
     public Guid ScheduleId { get; set; }
     public string ChildrenName { get; set; }
-    public string VaccineName { get; set; }
+    public Guid VaccineId { get; set; }
     public string ScheduleDate { get; set; } = string.Empty;
 
     public string ScheduleStatus { get; set; }

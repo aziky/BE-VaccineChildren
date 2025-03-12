@@ -4,7 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace VaccineChildren.Application.Services.Impl;
 
-public class RsaService : IRsaService, IDisposable
+public class RsaService : IRsaService
 {
     private readonly RSA _rsa;
     private readonly string _privateKeyPath;
@@ -69,11 +69,21 @@ public class RsaService : IRsaService, IDisposable
         }
     }
 
+    // public SecurityKey GetRsaSecurityKey()
+    // {
+    //     return new RsaSecurityKey(_rsa);
+    // }
     public SecurityKey GetRsaSecurityKey()
     {
-        return new RsaSecurityKey(_rsa);
+        // Create a new RSA instance with the same parameters
+        var rsaParams = _rsa.ExportParameters(true);
+        var newRsa = RSA.Create();
+        newRsa.ImportParameters(rsaParams);
+    
+        // Return a new security key with the cloned RSA instance
+        return new RsaSecurityKey(newRsa);
     }
-
+        
     public SigningCredentials GetSigningCredentials()
     {
         var securityKey = GetRsaSecurityKey();

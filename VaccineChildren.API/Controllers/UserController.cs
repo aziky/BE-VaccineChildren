@@ -58,6 +58,27 @@ public class UserController : BaseController
             return HandleException(ex, nameof(UserController));
         }
     }
+    
+    [AllowAnonymous]
+    [HttpPost("google-login")]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuthRequest request)
+    {
+        try
+        {
+            var userRes = await _userService.LoginWithGoogleAsync(request);
+            return Ok(BaseResponse<UserRes>.OkResponse(userRes, "Google login successful"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning("Unauthorized Google login attempt: {Message}", ex.Message);
+            return Unauthorized(BaseResponse<string>.BadRequestResponse("Invalid Google credentials"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("{Classname} - Error during Google login: {Message}", nameof(UserController), ex.Message);
+            return HandleException(ex, nameof(UserController));
+        }
+    }
     [AllowAnonymous]
     [HttpGet("verify-email")]
     public async Task<IActionResult> VerifyEmail([FromQuery] string token, [FromQuery] string email)

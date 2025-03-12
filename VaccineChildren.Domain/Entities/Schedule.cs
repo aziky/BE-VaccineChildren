@@ -8,7 +8,7 @@ public partial class Schedule
 
     public Guid? ChildId { get; set; }
 
-    public string? VaccineType { get; set; }
+    public Guid VaccineId { get; set; }
 
     public Guid? AdministeredBy { get; set; }
 

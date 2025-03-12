@@ -510,9 +510,9 @@ public partial class VaccineSystemDbContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
-            entity.Property(e => e.VaccineType)
+            entity.Property(e => e.VaccineId)
                 .HasMaxLength(255)
-                .HasColumnName("vaccine_type");
+                .HasColumnName("vaccine_id");
             entity.Property(e => e.PreVaccineCheckup).HasColumnName("pre_vaccine_checkup");
             entity.Property(e =>e.status).HasColumnName("status");
 

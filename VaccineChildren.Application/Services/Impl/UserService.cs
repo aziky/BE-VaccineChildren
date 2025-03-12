@@ -27,10 +27,11 @@ public class UserService : IUserService
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IGoogleAuthService _googleAuthService;
 
     public UserService(ILogger<IUserService> logger, IUnitOfWork unitOfWork, IMapper mapper, 
         IConfiguration configuration, IRsaService rsaService, ICacheService cacheService,
-        IEmailService emailService, IHttpContextAccessor httpContextAccessor)
+        IEmailService emailService, IHttpContextAccessor httpContextAccessor,IGoogleAuthService googleAuthService)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
@@ -40,6 +41,7 @@ public class UserService : IUserService
         _emailService = emailService;
         _configuration = configuration;
         _httpContextAccessor = httpContextAccessor;
+        _googleAuthService = googleAuthService;
     }
     public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRequest)
 {
@@ -124,6 +126,77 @@ public class UserService : IUserService
         _unitOfWork.Dispose();
     }
 }
+    public async Task<UserRes> LoginWithGoogleAsync(GoogleAuthRequest request)
+{
+    try
+    {
+        _logger.LogInformation("Processing Google login");
+        
+        // Xác thực token Google
+        var googleUserInfo = await _googleAuthService.VerifyGoogleTokenAsync(request.IdToken);
+        
+        if (googleUserInfo == null || string.IsNullOrEmpty(googleUserInfo.Email))
+        {
+            throw new UnauthorizedAccessException("Invalid Google token");
+        }
+        
+        // Kiểm tra xem email đã tồn tại trong hệ thống chưa
+        var userRepository = _unitOfWork.GetRepository<User>();
+        var user = await userRepository.FindByConditionAsync(u => u.Email == googleUserInfo.Email);
+        
+        // Nếu email chưa có trong hệ thống, đăng ký người dùng mới
+        if (user == null)
+        {
+            string randomPassword = Guid.NewGuid().ToString() + Guid.NewGuid().ToString();
+            string hashedPassword = _rsaService.Encrypt(randomPassword);
+            user = new User
+            {
+                Email = googleUserInfo.Email,
+                UserName = request.Username,
+                Password = hashedPassword,
+                FullName = request.Username,
+                IsVerified = googleUserInfo.VerifiedEmail,
+                CreatedAt = DateTime.UtcNow.ToLocalTime(),
+                CreatedBy = "Google Auth"
+            };
+            
+            // Gán role "user"
+            var roleRepository = _unitOfWork.GetRepository<Role>();
+            var userRole = await roleRepository.FindByConditionAsync(
+                r => r.RoleName.ToLower() == StaticEnum.RoleEnum.User.ToString().ToLower());
+            
+            if (userRole == null)
+            {
+                _logger.LogError("User role not found in database");
+                throw new InvalidOperationException("Error assigning user role");
+            }
+            
+            user.RoleId = userRole.RoleId;
+            
+            await userRepository.InsertAsync(user);
+            await _unitOfWork.SaveChangeAsync();
+        }
+        
+        // Tạo JWT token
+        var token = GenerateJwtToken(user);
+        
+        // Tạo response
+        var response = _mapper.Map<UserRes>(user);
+        response.Token = token;
+        response.RoleName = user.Role?.RoleName;
+        
+        // Cache thông tin người dùng
+        string cacheKey = $"user_{user.Email}";
+        await _cacheService.SetAsync(cacheKey, response, TimeSpan.FromHours(1));
+        
+        return response;
+    }
+    catch (Exception e)
+    {
+        _logger.LogError("Error during Google login: {Message}", e.Message);
+        throw;
+    }
+}
 
     private async Task SendVerificationEmail(User user, string verificationToken)
     {
@@ -131,7 +204,7 @@ public class UserService : IUserService
         string verificationUrl = $"{_configuration["AppUrl"]}/api/User/verify-email?token={verificationToken}&email={Uri.EscapeDataString(user.Email)}";
     
         // Get the email template
-        const int EMAIL_VERIFICATION_TEMPLATE_ID = 1; // Your template ID
+        var templateId = StaticEnum.EmailTemplateEnum.EmailVerification.Id();
     
         var templateData = new Dictionary<string, string>
         {
@@ -144,7 +217,7 @@ public class UserService : IUserService
         await _emailService.SendEmailAsync(
             user.Email,
             user.UserName,
-            EMAIL_VERIFICATION_TEMPLATE_ID,
+            templateId,
             templateData
         );
     }

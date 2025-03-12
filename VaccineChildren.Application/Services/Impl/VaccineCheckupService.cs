@@ -29,6 +29,8 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
         
         var scheduleRepository = _unitOfWork.GetRepository<Schedule>();
         var schedule = await scheduleRepository.FindByConditionAsync(s => s.ScheduleId == request.ScheduleId);
+        var batchRepository = _unitOfWork.GetRepository<Batch>();
+        var batch = await batchRepository.FindByConditionAsync(s => s.BatchId == request.BatchId);
         
         if (schedule == null)
         {
@@ -39,7 +41,15 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
                 Message = "Schedule not found"
             };
         }
-
+        if (batch == null || batch.Quantity == 0 || batch.ExpirationDate < DateTime.Now)
+        {
+            _logger.LogWarning("Batch not found: {BatchId}", request.BatchId);
+            return new BaseResponseModel
+            {
+                Success = false,
+                Message = "Batch not found"
+            };
+        }
         // Create the pre-vaccine checkup model
         var checkupData = new PreVaccineCheckup
         {
@@ -49,10 +59,10 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
             BloodPressure = request.BloodPressure,
             Pulse = request.Pulse,
             ChronicDiseases = request.ChronicDiseases?.ToList() ?? new List<string>(),
-            OtherDiseases = request.OtherDiseases,
+            // OtherDiseases = request.OtherDiseases,
             CurrentMedications = request.CurrentMedications,
             PreviousVaccineReactions = request.PreviousVaccineReactions,
-            MedicalHistory = request.MedicalHistory
+            // MedicalHistory = request.MedicalHistory
         };
         
         // Serialize to JSON
@@ -65,10 +75,13 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
         // Set the doctor who performed the checkup
         schedule.AdministeredBy = request.DoctorId;
         
-        schedule.UpdatedAt = DateTime.UtcNow.ToLocalTime();
+        schedule.UpdatedAt = DateTime.UtcNow;
+        schedule.status = StaticEnum.ScheduleStatusEnum.Vaccinated.Name();
+        batch.Quantity = batch.Quantity-1;
+
         // schedule.UpdatedBy = schedule.AdministeredBy.;
-        
-        await scheduleRepository.UpdateAsync(schedule);
+        // await batchRepository.UpdateAsync(batch);
+        // await scheduleRepository.UpdateAsync(schedule);
         await _unitOfWork.SaveChangeAsync();
         
         _logger.LogInformation("Pre-vaccine checkup saved successfully for schedule {ScheduleId}", request.ScheduleId);
@@ -113,7 +126,7 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
                 return new PreVaccineCheckupResponse
                 {
                     ScheduleId = scheduleId,
-                    VaccineType = schedule.VaccineType,
+                    VaccineId = schedule.VaccineId,
                     ChronicDiseases = new List<string>()
                 };
             }
@@ -129,7 +142,7 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
             {
                 ScheduleId = scheduleId,
                 ChildName = child?.FullName ?? "Unknown",
-                VaccineType = schedule.VaccineType,
+                VaccineId = schedule.VaccineId,
                 Weight = checkupData.Weight,
                 Height = checkupData.Height,
                 Temperature = checkupData.Temperature,

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Response;
@@ -11,6 +12,7 @@ namespace VaccineChildren.API.Controllers
 {
     [Route("api/v1/manufacturer")]
     [ApiController]
+    [Authorize (Roles = "manager")]
     public class ManufacturerController : BaseController
     {
         private readonly ILogger<ManufacturerController> _logger;
