@@ -95,7 +95,7 @@ public class UserController : BaseController
             }
 
             // Redirect to frontend success page
-            return Redirect($"{_configuration["FrontendUrl"]}");
+            return Redirect($"{_configuration["FrontendUrl/login"]}");
         }
         catch (Exception ex)
         {
