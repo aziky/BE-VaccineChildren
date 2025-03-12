@@ -74,20 +74,17 @@ public class MappingProfile : Profile
 
         CreateMap<Schedule, VaccinatedHistory>()
                    .ForMember(dest => dest.ChildName, opt => opt.MapFrom(src => src.Child.FullName))
-                   .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.VaccineType))
+                   .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.Vaccine.VaccineName))
+                   .ForMember(dest => dest.ManufacturerName, opt => opt.MapFrom(src => src.Vaccine.VaccineManufactures.FirstOrDefault().Manufacturer.Name))
+                   // .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.VaccineType))
                    .ForMember(dest => dest.VaccinatedDates, opt => opt.MapFrom(src => new List<VaccinatedDate>
                    {
                        new VaccinatedDate 
                        { 
-                           ScheduleDate = src.ScheduleDate ?? DateTime.MinValue, 
-                           ActualDate = src.ActualDate ?? DateTime.MinValue 
+                           ScheduleDate = src.ScheduleDate.HasValue ? src.ScheduleDate.Value.ToString("dd-MM-yyyy HH:mm:ss") : null,
+                           ActualDate = src.ActualDate.HasValue ? src.ActualDate.Value.ToString("dd-MM-yyyy HH:mm:ss") : null
                        }
                    }));
-
-       
-               CreateMap<Schedule, VaccinatedDate>()
-                   .ForMember(dest => dest.ScheduleDate, opt => opt.MapFrom(src => src.ScheduleDate))
-                   .ForMember(dest => dest.ActualDate, opt => opt.MapFrom(src => src.ActualDate));
 
     }
 }

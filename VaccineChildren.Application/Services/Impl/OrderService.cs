@@ -184,7 +184,7 @@ public class OrderService : IOrderService
                 return false;
             }
 
-            await ChangeScheduleStatus(orderInfo.ChildId, orderInfo.InjectionDate, payment.OrderId.ToString());
+            await ChangeScheduleStatus(orderInfo.ChildId, orderInfo.InjectionDate, payment.OrderId.ToString(), unitOfWork);
             payment.PaymentStatus = StaticEnum.PaymentStatusEnum.Paid.Name();
 
             await paymentRepository.UpdateAsync(payment);
@@ -203,13 +203,12 @@ public class OrderService : IOrderService
         return true;
     }
 
-    private async Task ChangeScheduleStatus(string childId, string injectionDate, string orderId)
+    private async Task ChangeScheduleStatus(string childId, string injectionDate, string orderId, IUnitOfWork unitOfWork)
     {
         try
         {
             _logger.LogInformation("Start retrieving schedule from redis");
-            _unitOfWork.BeginTransaction();
-            var scheduleRepository = _unitOfWork.GetRepository<Schedule>();
+            var scheduleRepository = unitOfWork.GetRepository<Schedule>();
 
             string key = $"schedule:{childId}:{injectionDate}";
             var listSchedule = await _cacheService.GetAsync<List<Schedule>>(key);
@@ -220,20 +219,17 @@ public class OrderService : IOrderService
             {
                 s.status = StaticEnum.ScheduleStatusEnum.Upcoming.Name();
                 s.OrderId = Guid.Parse(orderId);
-                // Ensure all DateTime fields are converted to UTC
                 s.ScheduleDate = s.ScheduleDate?.ToUniversalTime();
                 s.ActualDate = s.ActualDate?.ToUniversalTime();
                 s.CreatedAt = s.CreatedAt?.ToUniversalTime();
                 s.UpdatedAt = s.UpdatedAt?.ToUniversalTime();
             });       
             await scheduleRepository.InsertRangeAsync(listSchedule);
-            await _unitOfWork.SaveChangeAsync();
-            _unitOfWork.CommitTransaction();
             _logger.LogInformation("Schedule status updated");
         }
         catch (Exception e)
         {
-            _logger.LogError("Error when save schedule redis {}", e.Message);
+            _logger.LogError("Error when save schedule redis cause by {}", e.Message);
             throw;
         }
     }

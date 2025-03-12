@@ -527,6 +527,10 @@ public partial class VaccineSystemDbContext : DbContext
             entity.HasOne(d => d.Order).WithMany(p => p.Schedules)
                 .HasForeignKey(d => d.OrderId)
                 .HasConstraintName("schedule_order_id_fkey");
+            
+            entity.HasOne(d => d.Vaccine).WithMany(v => v.Schedules)  
+                .HasForeignKey(d => d.VaccineId)
+                .HasConstraintName("schedule_vaccine_id_fkey");
         });
 
         modelBuilder.Entity<Staff>(entity =>

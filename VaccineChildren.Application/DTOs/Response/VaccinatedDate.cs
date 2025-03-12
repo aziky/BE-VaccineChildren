@@ -2,6 +2,6 @@
 
 public class VaccinatedDate
 {
-    public DateTime ScheduleDate { get; set; }
-    public DateTime ActualDate { get; set; }
+    public string? ScheduleDate { get; set; }
+    public string? ActualDate { get; set; }
 }
