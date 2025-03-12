@@ -628,7 +628,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("schedule_id");
 
                     b.Property<DateTime?>("ActualDate")
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("actual_date");
 
                     b.Property<Guid?>("AdministeredBy")
@@ -640,7 +640,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("child_id");
 
                     b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("CreatedBy")
@@ -661,11 +661,11 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasColumnName("pre_vaccine_checkup");
 
                     b.Property<DateTime?>("ScheduleDate")
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("schedule_date");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.Property<string>("UpdatedBy")
@@ -690,6 +690,8 @@ namespace VaccineChildren.Infrastructure.Migrations
                     b.HasIndex("ChildId");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("VaccineId");
 
                     b.ToTable("schedule", (string)null);
                 });
@@ -983,8 +985,7 @@ namespace VaccineChildren.Infrastructure.Migrations
                     b.HasKey("ManufacturerId", "VaccineId")
                         .HasName("vaccine_manufactures_pkey");
 
-                    b.HasIndex(new[] { "VaccineId" }, "vaccine_manufactures_vaccine_id_key")
-                        .IsUnique();
+                    b.HasIndex(new[] { "VaccineId" }, "vaccine_manufactures_vaccine_id_key");
 
                     b.ToTable("vaccine_manufactures", (string)null);
                 });
@@ -1215,11 +1216,20 @@ namespace VaccineChildren.Infrastructure.Migrations
                         .HasForeignKey("OrderId")
                         .HasConstraintName("schedule_order_id_fkey");
 
+                    b.HasOne("VaccineChildren.Domain.Entities.Vaccine", "Vaccine")
+                        .WithMany("Schedules")
+                        .HasForeignKey("VaccineId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("schedule_vaccine_id_fkey");
+
                     b.Navigation("AdministeredByNavigation");
 
                     b.Navigation("Child");
 
                     b.Navigation("Order");
+
+                    b.Navigation("Vaccine");
                 });
 
             modelBuilder.Entity("VaccineChildren.Domain.Entities.Staff", b =>
@@ -1379,6 +1389,8 @@ namespace VaccineChildren.Infrastructure.Migrations
 
             modelBuilder.Entity("VaccineChildren.Domain.Entities.Vaccine", b =>
                 {
+                    b.Navigation("Schedules");
+
                     b.Navigation("UserCarts");
 
                     b.Navigation("VaccineManufactures");

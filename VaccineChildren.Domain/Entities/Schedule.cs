@@ -31,6 +31,9 @@ public partial class Schedule
     public virtual Child? Child { get; set; }
 
     public virtual Order? Order { get; set; }
+    
+    public virtual Vaccine? Vaccine { get; set; }
+    
     public string? PreVaccineCheckup { get; set; }
     public string? status { get; set; }
 
