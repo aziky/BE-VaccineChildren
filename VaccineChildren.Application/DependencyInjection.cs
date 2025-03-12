@@ -23,5 +23,6 @@ public static class DependencyInjection
         services.AddScoped<IScheduleService, ScheduleService>();
         services.AddHttpClient<IGoogleAuthService, GoogleAuthService>();
         services.AddScoped<IVaccineReactionService, VaccineReactionService>();
+        services.AddScoped<IPaymentService, PaymentService>();
     }
 }

@@ -38,7 +38,7 @@ services:
       - postgres
       - redis
     environment:
-      - ASPNETCORE_ENVIRONMENT=Dev
+      - ASPNETCORE_ENVIRONMENT=Stag
       - ASPNETCORE_URLS=http://+:5014
     networks:
       - app_network
