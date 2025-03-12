@@ -473,4 +473,138 @@ public class UserService : IUserService
             throw;
         }
     }
+    public async Task<RegisterResponse> ForgotPasswordAsync(string email)
+{
+    try
+    {
+        _logger.LogInformation("Processing forgot password request for email: {Email}", email);
+        
+        var userRepository = _unitOfWork.GetRepository<User>();
+        var user = await userRepository.FindByConditionAsync(u => u.Email == email);
+
+        if (user == null)
+        {
+            // For security reasons, don't reveal that the user doesn't exist
+            _logger.LogWarning("Forgot password requested for non-existent email: {Email}", email);
+            return new RegisterResponse { Success = true, Message = "If your email exists in our system, you will receive a password reset link" };
+        }
+
+        // Generate a password reset token
+        string resetToken = Guid.NewGuid().ToString();
+        
+        // Store token in Redis with expiration (1 hour)
+        await _cacheService.SetAsync(
+            $"password_reset:{email}",
+            new PasswordResetData { 
+                Token = resetToken,
+                ExpiresAt = DateTime.UtcNow.AddHours(1)
+            },
+            TimeSpan.FromHours(1)
+        );
+
+        // Send password reset email
+        await SendPasswordResetEmail(user, resetToken);
+
+        return new RegisterResponse { Success = true, Message = "Password reset email sent successfully" };
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error processing forgot password request for {Email}", email);
+        throw;
+    }
+}
+
+private async Task SendPasswordResetEmail(User user, string resetToken)
+{
+    // Create reset password URL with token
+    string resetUrl = $"{_configuration["AppUrl"]}/api/User/verify-reset-token?token={resetToken}&email={Uri.EscapeDataString(user.Email)}";
+    
+    // Get the email template (assuming you have a template for password reset)
+    var templateId = StaticEnum.EmailTemplateEnum.PasswordReset.Id();
+    
+    var templateData = new Dictionary<string, string>
+    {
+        { "UserName", user.UserName },
+        { "ResetLink", resetUrl },
+        { "ResetButton", $"<a href='{resetUrl}' style='display:inline-block;background-color:#c10c0c;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;font-weight:bold;'>RESET YOUR PASSWORD</a>" }
+    };
+    
+    // Send the email
+    await _emailService.SendEmailAsync(
+        user.Email,
+        user.UserName,
+        templateId,
+        templateData
+    );
+}
+
+public async Task<RegisterResponse> VerifyResetTokenAsync(string token, string email)
+{
+    try
+    {
+        _logger.LogInformation("Verifying password reset token for email: {Email}", email);
+        
+        // Get the reset token data from Redis
+        var resetData = await _cacheService.GetAsync<PasswordResetData>($"password_reset:{email}");
+        
+        if (resetData == null || resetData.Token != token || resetData.ExpiresAt < DateTime.UtcNow)
+        {
+            return new RegisterResponse { Success = false, Message = "Invalid or expired reset token" };
+        }
+        
+        return new RegisterResponse { Success = true, Message = "Token verified successfully" };
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error verifying reset token for {Email}", email);
+        throw;
+    }
+}
+
+public async Task<RegisterResponse> ResetPasswordAsync(ResetPasswordRequest request)
+{
+    try
+    {
+        _logger.LogInformation("Processing password reset for email: {Email}", request.Email);
+        
+        // First verify the token again
+        var resetData = await _cacheService.GetAsync<PasswordResetData>($"password_reset:{request.Email}");
+        
+        if (resetData == null || resetData.Token != request.Token || resetData.ExpiresAt < DateTime.UtcNow)
+        {
+            return new RegisterResponse { Success = false, Message = "Invalid or expired reset token" };
+        }
+        
+        // Update the user's password
+        var userRepository = _unitOfWork.GetRepository<User>();
+        var user = await userRepository.FindByConditionAsync(u => u.Email == request.Email);
+        
+        if (user == null)
+        {
+            return new RegisterResponse { Success = false, Message = "User not found" };
+        }
+        
+        // Hash the new password
+        string hashedPassword = _rsaService.Encrypt(request.NewPassword);
+        user.Password = hashedPassword;
+        user.UpdatedAt = DateTime.UtcNow.ToLocalTime();
+        user.UpdatedBy = "System";
+        
+        await userRepository.UpdateAsync(user);
+        await _unitOfWork.SaveChangeAsync();
+        
+        // Remove the reset token from Redis
+        await _cacheService.RemoveAsync($"password_reset:{request.Email}");
+        
+        // Invalidate any cached user data
+        await _cacheService.RemoveAsync($"user_{request.Email}");
+        
+        return new RegisterResponse { Success = true, Message = "Password reset successful" };
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error resetting password for {Email}", request.Email);
+        throw;
+    }
+}
 }
