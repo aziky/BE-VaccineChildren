@@ -52,13 +52,16 @@ public class MappingProfile : Profile
         CreateMap<Package, PackageRes>()
             .ForMember(dest => dest.Vaccines, opt => opt.MapFrom(src => src.Vaccines));
         CreateMap<BatchReq, Batch>();
-        CreateMap<Batch, BatchRes>();
+        CreateMap<Batch, BatchRes>()
+            .ForMember(dest => dest.Vaccine, opt => opt.MapFrom(src => src.Vaccine)); // Ánh xạ từ VaccineManufacture sang VaccineRes
 
         CreateMap<VaccineManufacture, VaccineRes>()
-            .ForMember(dest => dest.Manufacturers, opt => opt.MapFrom(src => src.Manufacturer))
-            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price ?? 0))
             .ForMember(dest => dest.VaccineId, opt => opt.MapFrom(src => src.VaccineId.ToString()))
-            .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.Vaccine.VaccineName));
+            .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.Vaccine.VaccineName))
+            .ForMember(dest => dest.Manufacturers, opt => opt.MapFrom(src => new List<Manufacturer> { src.Manufacturer }))
+            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price ?? 0))
+            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => 
+                src.Vaccine != null ? MappingHelpers.DeserializeDescription(src.Vaccine.Description) : null));
 
         CreateMap<User, GetUserRes>()
             .ForMember(dest => dest.ListChildRes, opt => opt.MapFrom(src => src.Children));
