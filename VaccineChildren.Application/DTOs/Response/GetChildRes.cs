@@ -2,7 +2,6 @@
 
 public class GetChildRes
 {
-    public string OrderId { get; set; }
     public string ChildId { get; set; }
     public string FullName { get; set; }
     public string Dob { get; set; }
