@@ -45,16 +45,16 @@ public class PaymentService : IPaymentService
         }
     }
 
-    public async Task<IList<VaccinatedHistory>> GetVaccinatedHistory(Guid orderId)
+    public async Task<IList<VaccinatedHistory>> GetVaccinatedHistory(Guid childId)
     {
         try
         {
-            _logger.LogInformation("Start retrieving vaccinated history with paymentId {}", orderId);
+            _logger.LogInformation("Start retrieving vaccinated history with paymentId {}", childId);
             var scheduleRepository = _unitOfWork.GetRepository<Schedule>();
             var scheduleList = await scheduleRepository.GetAllAsync(query => query
                 .Include(s => s.Vaccine).ThenInclude(v => v.VaccineManufactures).ThenInclude(vm => vm.Manufacturer)
                 .Include(s => s.Child)
-                .Where(s => s.OrderId == orderId && s.IsVaccinated == false)
+                .Where(s => s.ChildId == childId && s.IsVaccinated == false)
             );
             var response = _mapper.Map<IList<VaccinatedHistory>>(scheduleList);
             
