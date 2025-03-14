@@ -16,7 +16,7 @@ public class GetChildRes
         public string VaccineName { get; set; }
         public DateTime? ScheduleDate { get; set; }
         public DateTime? ActualDate { get; set; }
-        public bool IsVaccinated { get; set; }
+        public string status { get; set; }
     }
     
 }
