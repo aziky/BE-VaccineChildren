@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Requests;
 using VaccineChildren.Application.DTOs.Response;
@@ -52,13 +53,16 @@ public class MappingProfile : Profile
         CreateMap<Package, PackageRes>()
             .ForMember(dest => dest.Vaccines, opt => opt.MapFrom(src => src.Vaccines));
         CreateMap<BatchReq, Batch>();
-        CreateMap<Batch, BatchRes>();
+        CreateMap<Batch, BatchRes>()
+            .ForMember(dest => dest.Vaccine, opt => opt.MapFrom(src => src.Vaccine)); // Ánh xạ từ VaccineManufacture sang VaccineRes
 
         CreateMap<VaccineManufacture, VaccineRes>()
-            .ForMember(dest => dest.Manufacturers, opt => opt.MapFrom(src => src.Manufacturer))
-            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price ?? 0))
             .ForMember(dest => dest.VaccineId, opt => opt.MapFrom(src => src.VaccineId.ToString()))
-            .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.Vaccine.VaccineName));
+            .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.Vaccine.VaccineName))
+            .ForMember(dest => dest.Manufacturers, opt => opt.MapFrom(src => new List<Manufacturer> { src.Manufacturer }))
+            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price ?? 0))
+            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => 
+                src.Vaccine != null ? MappingHelpers.DeserializeDescription(src.Vaccine.Description) : null));
 
         CreateMap<User, GetUserRes>()
             .ForMember(dest => dest.ListChildRes, opt => opt.MapFrom(src => src.Children));
@@ -66,7 +70,9 @@ public class MappingProfile : Profile
         CreateMap<Child, GetChildRes>()
             .ForMember(dest => dest.VaccinatedInformation, opt => opt.MapFrom(src => src.Schedules));
 
-        CreateMap<Schedule, GetChildRes.VaccinatedInfor>();
+        CreateMap<Schedule, GetChildRes.VaccinatedInfor>()
+            .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.Vaccine.VaccineName))
+            .ForMember(dest => dest.ManufacturerName, opt => opt.MapFrom(src => src.Vaccine.VaccineManufactures.FirstOrDefault().Manufacturer.Name));
         CreateMap<ScheduleReq, Schedule>().ReverseMap();
 
         CreateMap<Payment, PaymentHistoryRes>()
@@ -76,7 +82,6 @@ public class MappingProfile : Profile
                    .ForMember(dest => dest.ChildName, opt => opt.MapFrom(src => src.Child.FullName))
                    .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.Vaccine.VaccineName))
                    .ForMember(dest => dest.ManufacturerName, opt => opt.MapFrom(src => src.Vaccine.VaccineManufactures.FirstOrDefault().Manufacturer.Name))
-                   // .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.VaccineType))
                    .ForMember(dest => dest.VaccinatedDates, opt => opt.MapFrom(src => new List<VaccinatedDate>
                    {
                        new VaccinatedDate 

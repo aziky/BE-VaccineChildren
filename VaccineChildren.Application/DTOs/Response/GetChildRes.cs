@@ -12,10 +12,11 @@ public class GetChildRes
     public class VaccinatedInfor
     {
         public string ScheduleId { get; set; }
-        public string VaccineType { get; set; }
+        public string ManufacturerName { get; set; }
+        public string VaccineName { get; set; }
         public DateTime? ScheduleDate { get; set; }
         public DateTime? ActualDate { get; set; }
-        public bool IsVaccinated { get; set; }
+        public string status { get; set; }
     }
     
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Core.Base;
@@ -7,7 +8,8 @@ using VaccineChildren.Core.Base;
 namespace VaccineChildren.API.Controllers;
 
 [Route("api/[controller]")]
-[Authorize("user")]
+[ApiController]
+[Authorize(Roles = "user")]
 public class PaymentController : BaseController
 {
     private readonly ILogger<PaymentController> _logger;
@@ -36,13 +38,15 @@ public class PaymentController : BaseController
         }
     }
     
-    [HttpGet("details/{orderId}")]
-    public async Task<IActionResult> GetVaccinated([FromRoute] Guid orderId)
+    [HttpGet("details/{childId}")]
+    [SwaggerOperation(Summary = "Upcoming schedule for details for child Vaccine", 
+        Description = "Upcoming schedule for details for child Vaccine")]
+    public async Task<IActionResult> GetVaccinated([FromRoute] Guid childId)
     {
         try
         {
-            _logger.LogInformation("Start handle request get payment with order id {}", orderId);
-            var response = await _paymentService.GetVaccinatedHistory(orderId);
+            _logger.LogInformation("Start handle request get payment with order id {}", childId);
+            var response = await _paymentService.GetVaccinatedHistory(childId);
             return Ok(BaseResponse<IList<VaccinatedHistory>>.OkResponse(response, "Vaccinated history"));
         }
         catch (Exception e)
