@@ -37,13 +37,13 @@ public class PaymentController : BaseController
         }
     }
     
-    [HttpGet("details/{orderId}")]
-    public async Task<IActionResult> GetVaccinated([FromRoute] Guid child)
+    [HttpGet("details/{childId}")]
+    public async Task<IActionResult> GetVaccinated([FromRoute] Guid childId)
     {
         try
         {
-            _logger.LogInformation("Start handle request get payment with order id {}", child);
-            var response = await _paymentService.GetVaccinatedHistory(child);
+            _logger.LogInformation("Start handle request get payment with order id {}", childId);
+            var response = await _paymentService.GetVaccinatedHistory(childId);
             return Ok(BaseResponse<IList<VaccinatedHistory>>.OkResponse(response, "Vaccinated history"));
         }
         catch (Exception e)
