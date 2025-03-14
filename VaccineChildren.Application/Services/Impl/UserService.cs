@@ -460,7 +460,9 @@ public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRe
             _logger.LogInformation("Start get user profile with user id {}", userId);
             var userRepository = _unitOfWork.GetRepository<User>();
 
-            var user = await userRepository.GetAllAsync(query => query.Include(u => u.Children).ThenInclude(c => c.Schedules)
+            var user = await userRepository.GetAllAsync(query => query.Include(u => u.Children)
+                .ThenInclude(c => c.Schedules.Where(s => s.IsVaccinated == true))
+                .ThenInclude(s => s.Vaccine).ThenInclude(v => v.VaccineManufactures).ThenInclude(vm => vm.Manufacturer)
                     .Where(u => u.UserId.ToString().Equals(userId)));
             if (user.FirstOrDefault() == null) throw new KeyNotFoundException("Can't find user profile with user id: " + userId);
             
