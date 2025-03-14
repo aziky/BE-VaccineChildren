@@ -437,8 +437,11 @@ public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRe
             _logger.LogInformation("Start getting child profile");
             
             var childRepository = _unitOfWork.GetRepository<Child>();
-            var child = await childRepository.GetAllAsync(query => query.Include(c => c.Schedules)
-                .Where(c => c.ChildId.ToString().Equals(childId)));
+            var child = await childRepository.GetAllAsync(query => query
+                .Include(c => c.Schedules.Where(s => s.IsVaccinated == true))
+                .ThenInclude(s => s.Vaccine).ThenInclude(v => v.VaccineManufactures).ThenInclude(vm => vm.Manufacturer)
+                .Where(c => c.ChildId.ToString().Equals(childId))
+            );
             if (child.FirstOrDefault() == null) throw new KeyNotFoundException("Child not found");
             
             return _mapper.Map<GetChildRes>(child.FirstOrDefault());

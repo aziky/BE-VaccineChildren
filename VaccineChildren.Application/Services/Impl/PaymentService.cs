@@ -54,7 +54,7 @@ public class PaymentService : IPaymentService
             var scheduleList = await scheduleRepository.GetAllAsync(query => query
                 .Include(s => s.Vaccine).ThenInclude(v => v.VaccineManufactures).ThenInclude(vm => vm.Manufacturer)
                 .Include(s => s.Child)
-                .Where(s => s.OrderId == orderId)
+                .Where(s => s.OrderId == orderId && s.IsVaccinated == false)
             );
             var response = _mapper.Map<IList<VaccinatedHistory>>(scheduleList);
             

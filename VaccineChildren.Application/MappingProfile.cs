@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using VaccineChildren.Application.DTOs.Request;
 using VaccineChildren.Application.DTOs.Requests;
 using VaccineChildren.Application.DTOs.Response;
@@ -69,7 +70,9 @@ public class MappingProfile : Profile
         CreateMap<Child, GetChildRes>()
             .ForMember(dest => dest.VaccinatedInformation, opt => opt.MapFrom(src => src.Schedules));
 
-        CreateMap<Schedule, GetChildRes.VaccinatedInfor>();
+        CreateMap<Schedule, GetChildRes.VaccinatedInfor>()
+            .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.Vaccine.VaccineName))
+            .ForMember(dest => dest.ManufacturerName, opt => opt.MapFrom(src => src.Vaccine.VaccineManufactures.FirstOrDefault().Manufacturer.Name));
         CreateMap<ScheduleReq, Schedule>().ReverseMap();
 
         CreateMap<Payment, PaymentHistoryRes>()
@@ -79,7 +82,6 @@ public class MappingProfile : Profile
                    .ForMember(dest => dest.ChildName, opt => opt.MapFrom(src => src.Child.FullName))
                    .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.Vaccine.VaccineName))
                    .ForMember(dest => dest.ManufacturerName, opt => opt.MapFrom(src => src.Vaccine.VaccineManufactures.FirstOrDefault().Manufacturer.Name))
-                   // .ForMember(dest => dest.VaccineName, opt => opt.MapFrom(src => src.VaccineType))
                    .ForMember(dest => dest.VaccinatedDates, opt => opt.MapFrom(src => new List<VaccinatedDate>
                    {
                        new VaccinatedDate 
