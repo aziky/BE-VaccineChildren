@@ -438,7 +438,7 @@ public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRe
             
             var childRepository = _unitOfWork.GetRepository<Child>();
             var child = await childRepository.GetAllAsync(query => query
-                .Include(c => c.Schedules.Where(s => s.IsVaccinated == true))
+                .Include(c => c.Schedules.Where(s => s.status == StaticEnum.ScheduleStatusEnum.Completed.Name()))
                 .ThenInclude(s => s.Vaccine).ThenInclude(v => v.VaccineManufactures).ThenInclude(vm => vm.Manufacturer)
                 .Where(c => c.ChildId.ToString().Equals(childId))
             );
@@ -461,7 +461,7 @@ public async Task<RegisterResponse> RegisterUserAsync(RegisterRequest registerRe
             var userRepository = _unitOfWork.GetRepository<User>();
 
             var user = await userRepository.GetAllAsync(query => query.Include(u => u.Children)
-                .ThenInclude(c => c.Schedules.Where(s => s.IsVaccinated == true))
+                .ThenInclude(c => c.Schedules.Where(s => s.status == StaticEnum.ScheduleStatusEnum.Completed.Name()))
                 .ThenInclude(s => s.Vaccine).ThenInclude(v => v.VaccineManufactures).ThenInclude(vm => vm.Manufacturer)
                     .Where(u => u.UserId.ToString().Equals(userId)));
             if (user.FirstOrDefault() == null) throw new KeyNotFoundException("Can't find user profile with user id: " + userId);

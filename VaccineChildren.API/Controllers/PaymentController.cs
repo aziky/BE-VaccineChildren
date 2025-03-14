@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Application.Services;
 using VaccineChildren.Core.Base;
@@ -38,6 +39,8 @@ public class PaymentController : BaseController
     }
     
     [HttpGet("details/{childId}")]
+    [SwaggerOperation(Summary = "Upcoming schedule for details for child Vaccine", 
+        Description = "Upcoming schedule for details for child Vaccine")]
     public async Task<IActionResult> GetVaccinated([FromRoute] Guid childId)
     {
         try
