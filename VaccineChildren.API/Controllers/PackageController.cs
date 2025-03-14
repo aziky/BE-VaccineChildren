@@ -43,6 +43,7 @@ namespace VaccineChildren.API.Controllers
 
         // GET api/v1/package/{packageId}
         [HttpGet("{packageId:guid}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetPackageById(Guid packageId)
         {
             try
@@ -146,6 +147,7 @@ namespace VaccineChildren.API.Controllers
 
         // GET api/v1/package
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAllPackages()
         {
             try

@@ -55,6 +55,7 @@ namespace VaccineChildren.API.Controllers
 
         // GET api/v1/vaccine/{vaccineId}
         [HttpGet("{vaccineId:guid}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetVaccineById(Guid vaccineId)
         {
             try
@@ -131,6 +132,7 @@ namespace VaccineChildren.API.Controllers
 
         // GET api/v1/vaccine
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAllVaccines([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
         {
             try

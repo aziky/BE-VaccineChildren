@@ -68,7 +68,7 @@ public class VaccineReactionService : IVaccineReactionService
             if (schedule.status == StaticEnum.ScheduleStatusEnum.Vaccinated.Name())
             {
                 schedule.status = StaticEnum.ScheduleStatusEnum.Completed.Name();
-                schedule.UpdatedAt = DateTime.UtcNow.ToLocalTime();
+                schedule.UpdatedAt = DateTime.UtcNow;
                 // schedule.UpdatedBy = _currentUserService.GetUserName() ?? "System";
 
 

@@ -14,4 +14,7 @@ public interface IUserService
     Task<GetChildRes> GetChildByChildIdAsync(string childId);
     Task<GetUserRes> GetUserByUserIdAsync(string userId);
     Task<UserRes> LoginWithGoogleAsync(GoogleAuthRequest request);
+    Task<RegisterResponse> ForgotPasswordAsync(string email);
+    Task<RegisterResponse> VerifyResetTokenAsync(string token, string email);
+    Task<RegisterResponse> ResetPasswordAsync(ResetPasswordRequest request);
 }

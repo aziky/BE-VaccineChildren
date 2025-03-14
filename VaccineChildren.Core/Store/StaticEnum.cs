@@ -62,12 +62,8 @@ public static class StaticEnum
         EmailVerification,
 
         [CustomName("Password Reset")]
-        [CustomId(4)]
-        PasswordReset,
-
-        [CustomName("Vaccination Reminder")]
         [CustomId(3)]
-        VaccinationReminder,
+        PasswordReset,
 
         [CustomName("Appointment Confirmation")]
         [CustomId(2)]
