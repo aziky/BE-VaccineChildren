@@ -5,10 +5,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using VaccineChildren.Application.DTOs.Request;
+using VaccineChildren.Core.Exceptions;
 using VaccineChildren.Core.Store;
 using VaccineChildren.Domain.Abstraction;
 using VaccineChildren.Domain.Entities;
 using VaccineChildren.Domain.Models;
+using VaccineChildren.Domain.Models.Momo;
 
 namespace VaccineChildren.Application.Services.Impl;
 
@@ -20,9 +22,11 @@ public class OrderService : IOrderService
     private readonly IServiceProvider _serviceProvider;
     private readonly ICacheService _cacheService;
     private readonly IEmailService _emailService;
+    private readonly IMomoService _momoService;
 
     public OrderService(ILogger<OrderService> logger, IUnitOfWork unitOfWork, IVnPayService vnPayService,
-        IServiceProvider serviceProvider, ICacheService cacheService, IEmailService emailService)
+        IServiceProvider serviceProvider, ICacheService cacheService, IEmailService emailService, 
+        IMomoService momoService)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
@@ -30,6 +34,7 @@ public class OrderService : IOrderService
         _serviceProvider = serviceProvider;
         _cacheService = cacheService;
         _emailService = emailService;
+        _momoService = momoService;
     }
 
     public async Task<string> CreateOrderAsync(CreateOrderReq request, HttpContext httpContext)
@@ -101,7 +106,6 @@ public class OrderService : IOrderService
                 UserId = user.UserId,
                 Amount = (decimal)request.Amount,
                 PaymentDate = DateTime.Now,
-                PaymentMethod = StaticEnum.PaymentMethodEnum.VnPay.Name(),
                 PaymentStatus = StaticEnum.PaymentStatusEnum.Pending.Name(),
                 CreatedAt = order.CreatedAt,
                 CreatedBy = order.CreatedBy
@@ -117,10 +121,30 @@ public class OrderService : IOrderService
                 PaymentId = payment.PaymentId.ToString(),
                 InjectionDate = formatInjectDate.ToString("yyyyMMddHHmmss"),
                 ChildId = request.ChildId.ToString(),
+                OrderInfo =  $"{payment.PaymentId.ToString()}, {request.ChildId}, {formatInjectDate.ToString("yyyyMMddHHmmss")}"
             };
 
-            string url = _vnPayService.CreatePaymentUrl(paymentInformation, httpContext);
-
+            // string url = _vnPayService.CreatePaymentUrl(paymentInformation, httpContext);
+            string url = "";
+            switch (request.PaymentMethod)
+            {
+                case var paymentMethod when string.Equals(StaticEnum.PaymentMethodEnum.VnPay.Name(), paymentMethod, StringComparison.OrdinalIgnoreCase):
+                {
+                    payment.PaymentMethod = StaticEnum.PaymentMethodEnum.VnPay.Name();
+                    url = _vnPayService.CreatePaymentUrl(paymentInformation, httpContext);
+                    break;
+                }
+                case var paymentMethod when string.Equals(StaticEnum.PaymentMethodEnum.Momo.Name(), paymentMethod, StringComparison.OrdinalIgnoreCase):
+                {
+                    payment.PaymentMethod = StaticEnum.PaymentMethodEnum.Momo.Name();
+                    MomoCreatePaymentResponseModel responseModel = await _momoService.CreatePaymentAsync(paymentInformation);
+                    url = responseModel.PayUrl;
+                    break;
+                }
+                default:
+                    throw new CustomExceptions.EnumNotFoundException("Payment method enum not found");
+            }
+            
             await _unitOfWork.SaveChangeAsync();
             _unitOfWork.CommitTransaction();
             _logger.LogInformation("Done creating order async");
@@ -192,6 +216,7 @@ public class OrderService : IOrderService
             unitOfWork.CommitTransaction();
 
             await SendEmail(payment);
+            return true;
         }
         catch (Exception e)
         {
@@ -200,7 +225,72 @@ public class OrderService : IOrderService
             return false;
         }
 
-        return true;
+    }
+
+    public async Task<bool> HandleMomoResponse(IQueryCollection collection)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        try
+        {
+            var response = _momoService.GetFullResponseData(collection);
+            var orderInfo = ExtractValues(response.OrderInfo);
+
+            var paymentRepository = unitOfWork.GetRepository<Payment>();
+            var orderRepository = unitOfWork.GetRepository<Order>();
+
+            var listPayment = await paymentRepository.GetAllAsync(query => query
+                .Include(p => p.User).Include(p => p.Order).ThenInclude(o => o.Child)
+                .Where(p => p.PaymentId.ToString() == orderInfo.PaymentId));
+            var payment = listPayment.FirstOrDefault();
+            unitOfWork.BeginTransaction();
+
+            payment.UpdatedAt = DateTime.Now;
+            payment.UpdatedBy = StaticEnum.PaymentMethodEnum.Momo.Name();
+
+            if (!response.Success || response.ErrorCode != "0")
+            {
+                var order = await orderRepository.FindAsync(o => o.OrderId == payment.OrderId);
+                order.Status = StaticEnum.OrderStatusEnum.Cancelled.Name();
+                await orderRepository.UpdateAsync(order);
+
+                switch (response.ErrorCode)
+                {
+                    case var responseCode when responseCode == StaticEnum.MomoResponseCode.Failed.Name():
+                        payment.PaymentStatus = StaticEnum.PaymentStatusEnum.Cancelled.Name();
+                        break;
+                    case var responseCode when responseCode == StaticEnum.MomoResponseCode.Rejected.Name():
+                        payment.PaymentStatus = StaticEnum.PaymentStatusEnum.Rejected.Name();
+                        break;
+                    default:
+                        payment.PaymentStatus = StaticEnum.PaymentStatusEnum.Failed.Name();
+                        break;
+                }
+
+                _logger.LogError($"Error with momo paymnet with error code {response.ErrorCode} and message {response.ErrorMessage}");
+                await paymentRepository.UpdateAsync(payment);
+                await unitOfWork.SaveChangeAsync();
+                unitOfWork.CommitTransaction();
+                return false;
+            }
+            
+            await ChangeScheduleStatus(orderInfo.ChildId, orderInfo.InjectionDate, payment.OrderId.ToString(), unitOfWork);
+            payment.PaymentStatus = StaticEnum.PaymentStatusEnum.Paid.Name();
+
+            await paymentRepository.UpdateAsync(payment);
+            await unitOfWork.SaveChangeAsync();
+            unitOfWork.CommitTransaction();
+
+            await SendEmail(payment);
+            return true;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Error at handle momo response {}", e.Message);
+            unitOfWork.RollBack();
+            return false;
+        }
+
     }
 
     private async Task ChangeScheduleStatus(string childId, string injectionDate, string orderId, IUnitOfWork unitOfWork)

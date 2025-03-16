@@ -53,4 +53,14 @@ public static class CustomExceptions
 
         public BusinessLogicException(string message, Exception innerException) : base(message, innerException) { }
     }
+
+
+    public class EnumNotFoundException : Exception
+    {
+        public EnumNotFoundException() : base("Enum not found.") { }
+        
+        public EnumNotFoundException(string message) : base(message) { }
+        
+        public EnumNotFoundException(string message, Exception innerException) : base(message, innerException) { }
+    }
 }

@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
+using VaccineChildren.Core.Store;
 using VaccineChildren.Domain.Models;
 
 namespace VaccineChildren.Infrastructure.VNPay;
@@ -45,7 +46,7 @@ public class VnPayLibrary
         return new PaymentResponseModel()
         {
             Success = true,
-            PaymentMethod = "VnPay",
+            PaymentMethod = StaticEnum.PaymentMethodEnum.VnPay.Name(),
             OrderInfo = orderInfo,
             OrderId = orderId.ToString(),
             TransactionId = vnPayTranId,
