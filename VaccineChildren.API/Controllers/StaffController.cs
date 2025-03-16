@@ -9,7 +9,7 @@ namespace VaccineChildren.API.Controllers;
 
 [Route("api/v1/staff")]  
 [ApiController]
-[Authorize (Roles = "admin")]
+[Authorize (Roles = "manager")]
 public class StaffController : BaseController
 {
     private readonly ILogger<StaffController> _logger;

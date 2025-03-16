@@ -49,6 +49,7 @@ namespace VaccineChildren.API.Controllers
 
         // GET api/v1/batch/{batchId}
         [HttpGet("{batchId}")]
+        [Authorize(Roles = "manager,doctor")]
         public async Task<IActionResult> GetBatchById(string batchId)
         {
             try
@@ -71,6 +72,7 @@ namespace VaccineChildren.API.Controllers
 
         // GET api/v1/batch
         [HttpGet]
+        [Authorize(Roles = "manager,doctor")]
         public async Task<IActionResult> GetAllBatches()
         {
             try
