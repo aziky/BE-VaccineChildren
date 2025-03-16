@@ -16,5 +16,7 @@ public class CreateOrderReq
         public bool Modified { get; set; }
         public List<string> VaccineModifiedIdList { get; set; } = new();
     }
+    
+    public string PaymentMethod { get; set; }
 
 }

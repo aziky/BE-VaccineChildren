@@ -33,7 +33,8 @@ public static class StaticEnum
         [CustomName("pending")] Pending,
         [CustomName("paid")] Paid,
         [CustomName("cancelled")] Cancelled,
-        [CustomName("failed")] Failed
+        [CustomName("failed")] Failed,
+        [CustomName("rejected")] Rejected,
     }
     
     public enum OrderStatusEnum
@@ -45,7 +46,8 @@ public static class StaticEnum
 
     public enum PaymentMethodEnum
     {
-        [CustomName("VN Pay")] VnPay,
+        [CustomName("VNPay")] VnPay,
+        [CustomName("Momo")] Momo,
     }
     
     public enum ScheduleStatusEnum
@@ -74,5 +76,12 @@ public static class StaticEnum
     {
         [CustomName("24")] Cancelled,
         [CustomName("00")] Completed = 00,
+    }
+    
+    public enum MomoResponseCode
+    {
+        [CustomName("0")] Completed,
+        [CustomName("44")] Failed,
+        [CustomName("4005")] Rejected,
     }
 }

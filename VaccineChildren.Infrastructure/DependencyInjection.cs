@@ -30,12 +30,25 @@ public static class DependencyInjection
         services.AddSingleton(redisSettings);
         services.AddRedis(redisSettings);
 
+        var momoConfig = new MomoConfig();
+        configuration.GetSection("MomoConfig").Bind(momoConfig);
+        services.AddSingleton(momoConfig);
+
+        var vnpayConfig = new VNPayConfig();
+        configuration.GetSection("VNPayConfig").Bind(vnpayConfig);
+        services.AddSingleton(vnpayConfig);
+
+        var paymentFrontEndUrl = new PaymentFrontEndUrl();
+        configuration.GetSection("PaymentFrontEndUrl").Bind(paymentFrontEndUrl);
+        services.AddSingleton(paymentFrontEndUrl);
+
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ICacheService, RedisCacheService>();
         services.AddScoped<IRsaService, RsaService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddHttpClient<IProvinceService, ProvinceService>();
         services.AddScoped<IVnPayService, VnPayService>();
+        services.AddHttpClient<IMomoService, MomoService>();
 
     }
 
