@@ -64,6 +64,7 @@ public class MomoService : IMomoService
             };
 
             var json = JsonSerializer.Serialize(requestData);
+            _logger.LogInformation("Json data: " + json);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(1));
             var response = await _httpClient.PostAsync(_momoConfig.MomoApiUrl, content, cts.Token);
