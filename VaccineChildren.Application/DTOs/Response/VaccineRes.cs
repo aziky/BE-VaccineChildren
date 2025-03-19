@@ -7,7 +7,7 @@ public class DescriptionDetail
 {
     public string Info { get; set; }
     public string TargetedPatient { get; set; }
-    public string InjectionSchedule { get; set; }
+    // public string InjectionSchedule { get; set; }
     public string VaccineReaction { get; set; }
 }
 
