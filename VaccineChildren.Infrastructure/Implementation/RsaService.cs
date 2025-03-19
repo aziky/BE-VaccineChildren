@@ -2,7 +2,7 @@
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 
-namespace VaccineChildren.Application.Services.Impl;
+namespace VaccineChildren.Infrastructure.Implementation;
 
 public class RsaService : IRsaService
 {
