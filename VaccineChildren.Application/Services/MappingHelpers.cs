@@ -10,7 +10,6 @@ public static class MappingHelpers
         {
             Info = "N/A",
             TargetedPatient = "N/A",
-            InjectionSchedule = "N/A",
             VaccineReaction = "N/A"
         });
     }

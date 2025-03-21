@@ -59,10 +59,8 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
             BloodPressure = request.BloodPressure,
             Pulse = request.Pulse,
             ChronicDiseases = request.ChronicDiseases?.ToList() ?? new List<string>(),
-            // OtherDiseases = request.OtherDiseases,
             CurrentMedications = request.CurrentMedications,
             PreviousVaccineReactions = request.PreviousVaccineReactions,
-            // MedicalHistory = request.MedicalHistory
         };
         
         // Serialize to JSON
@@ -79,9 +77,6 @@ public async Task<BaseResponseModel> SavePreVaccineCheckupAsync(PreVaccineChecku
         schedule.status = StaticEnum.ScheduleStatusEnum.Vaccinated.Name();
         batch.Quantity = batch.Quantity-1;
 
-        // schedule.UpdatedBy = schedule.AdministeredBy.;
-        // await batchRepository.UpdateAsync(batch);
-        // await scheduleRepository.UpdateAsync(schedule);
         await _unitOfWork.SaveChangeAsync();
         
         _logger.LogInformation("Pre-vaccine checkup saved successfully for schedule {ScheduleId}", request.ScheduleId);
