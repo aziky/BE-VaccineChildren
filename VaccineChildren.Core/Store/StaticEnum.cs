@@ -10,6 +10,8 @@ public static class StaticEnum
         [CustomName("adminResigned")] AdminResigned,
         [CustomName("managerWorking")] ManagerWorking,
         [CustomName("managerResigned")] ManagerResigned,
+        [CustomName("doctorWorking")] DoctorWorking,
+        [CustomName("doctorResigned")] DoctorResigned,
         [CustomName("userAccount")] UserAccount,
     }
 

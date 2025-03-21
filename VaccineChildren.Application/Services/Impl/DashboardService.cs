@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using VaccineChildren.Application.DTOs.Response;
 using VaccineChildren.Core.Exceptions;
 using VaccineChildren.Core.Store;
+
 using VaccineChildren.Domain.Abstraction;
 using VaccineChildren.Domain.Entities;
 
@@ -26,50 +28,52 @@ public class DashboardService : IDashboardService
         {
             _logger.LogInformation("{ClassName} - Getting account from dashboard", nameof(DashboardService));
             var userRepository = _unitOfWork.GetRepository<User>();
-            var staffRepository = _unitOfWork.GetRepository<Staff>();
-            int totalAccount = 0;
             AccountRes accountRes = new AccountRes();
 
-            IList<Staff> staffList = await staffRepository.GetAllAsync(query => query.Include(r => r.User.Role)
+            IList<User> userList = await userRepository.GetAllAsync(query => query.AsNoTracking()
+                .Include(r => r.Role).Include(u => u.Staff)
                 .Where(s => s.CreatedAt.HasValue && s.CreatedAt.Value.Year <= year));
 
-            foreach (var staff in staffList)
+            foreach (var user in userList)
             {
-                if (staff.User.Role == null) continue;
+                if (user.Role.RoleName.Equals(StaticEnum.RoleEnum.User.Name())) continue;
 
-                switch (staff.User.Role.RoleName)
+                switch (user.Role.RoleName)
                 {
                     case var roleName when roleName == StaticEnum.RoleEnum.Admin.Name():
-                        UpdateAccountCount(accountRes, staff,
+                        UpdateAccountCount(accountRes, user.Staff,
                             StaticEnum.AccountEnum.AdminWorking,
-                            StaticEnum.AccountEnum.AdminResigned, ref totalAccount);
+                            StaticEnum.AccountEnum.AdminResigned);
                         break;
 
                     case var roleName when roleName == StaticEnum.RoleEnum.Manager.Name():
-                        UpdateAccountCount(accountRes, staff,
+                        UpdateAccountCount(accountRes, user.Staff,
                             StaticEnum.AccountEnum.ManagerWorking,
-                            StaticEnum.AccountEnum.ManagerResigned, ref totalAccount);
+                            StaticEnum.AccountEnum.ManagerResigned);
                         break;
 
                     case var roleName when roleName == StaticEnum.RoleEnum.Staff.Name():
-                        UpdateAccountCount(accountRes, staff,
+                        UpdateAccountCount(accountRes, user.Staff,
                             StaticEnum.AccountEnum.StaffWorking,
-                            StaticEnum.AccountEnum.StaffResigned, ref totalAccount);
+                            StaticEnum.AccountEnum.StaffResigned);
                         break;
+                    case var roleName when roleName == StaticEnum.RoleEnum.Doctor.Name(): 
+                        UpdateAccountCount(accountRes, user.Staff,
+                            StaticEnum.AccountEnum.DoctorWorking,
+                            StaticEnum.AccountEnum.DoctorResigned);
+                        break;
+                    default:
+                        throw new Exception("Unknow support role");
                 }
             }
 
-            IList<User> userList = await userRepository.GetAllAsync(query => query.Include(r => r.Role)
-                .Where(u => u.CreatedAt.HasValue && u.CreatedAt.Value.Year <= year &&
-                            u.Role.RoleName.ToLower() == StaticEnum.RoleEnum.User.Name()));
-            int userCount = userList.Count;
-            if (userCount == 0 || totalAccount == 0)
+            if (userList.IsNullOrEmpty())
             {
                 throw new CustomExceptions.NoDataFoundException("There's no account");
             }
 
-            accountRes.AccountDictionary[StaticEnum.AccountEnum.UserAccount.Name()] = userCount;
-            accountRes.AccountDictionary["totalAccount"] = totalAccount + userCount;
+            accountRes.AccountDictionary[StaticEnum.AccountEnum.UserAccount.Name()] = userList.Count(u => u.Role.RoleName == StaticEnum.RoleEnum.User.Name());
+            accountRes.AccountDictionary["totalAccount"] =  userList.Count;
             _logger.LogInformation("Getting account from dashboard done");
             return accountRes;
         }
@@ -133,55 +137,86 @@ public class DashboardService : IDashboardService
             var scheduleRepository = _unitOfWork.GetRepository<Schedule>();
             var packageRepository = _unitOfWork.GetRepository<Package>();
             var manufacturerRepository = _unitOfWork.GetRepository<Manufacturer>();
-            var orderRepository = _unitOfWork.GetRepository<Order>();
 
             var packageAvailableList = await packageRepository.GetAllAsync(query => query
                 .Where(p => p.IsActive == true && p.CreatedAt.Value.Year == year));
             var vaccineActiveList = await vaccineRepository.GetAllAsync(query => query
                 .Where(v => v.IsActive == true && v.CreatedAt.Value.Year == year));
-            var vaccinatedCustomerList = await scheduleRepository.GetAllAsync(query => query
-                .Include(c => c.Child)
-                .Where(s => s.IsVaccinated == true && s.CreatedAt.Value.Year == year));
             var manufacturerList = await manufacturerRepository.GetAllAsync(query => query
                 .Include(m => m.VaccineManufactures).ThenInclude(vm => vm.Batches.Where(b => b.IsActive == true))
                 .Where(m => m.IsActive == true && m.CreatedAt.Value.Year == year)
             );
-
-            var vaccineOrderedList = await orderRepository.GetAllAsync(query => query
-                .Include(o => o.Vaccines)
-                .Include(o => o.Packages).ThenInclude(p => p.Vaccines)
-            );
             
             _logger.LogInformation($"{nameof(DashboardService)} - Get data successfully from dashboard summary");
+            
+            IList<Schedule> scheduleList = await scheduleRepository.GetAllAsync(query => query
+                .Include(s => s.Vaccine)
+                .Where(s => s.status.Equals(StaticEnum.ScheduleStatusEnum.Completed.Name()))
+            );
+            List<VaccineData> top5Vaccine = MapToTop5VaccineData(scheduleList);
+            
+            List<ManufacturerData> top5Manufacture = MapToTop5ManufacturerData(manufacturerList);
 
-            List<VaccineData> vaccineData = vaccineOrderedList
-                .SelectMany(o =>
-                    o.Vaccines
-                        .Select(vm => vm.Vaccine)
-                        .Concat(o.Packages.SelectMany(p => p.Vaccines)) 
-                        .Select(v => new VaccineData.VaccineDetails
-                        {
-                            VaccineId = v.VaccineId.ToString(),
-                            VaccineName = v.VaccineName
-                        })
-                )
-                .GroupBy(v => vaccineOrderedList.Count(o =>
-                    o.Vaccines.Any(vm => vm.Vaccine.VaccineId.ToString() == v.VaccineId) || 
-                    o.Packages.Any(p => p.Vaccines.Any(s => s.VaccineId.ToString() == v.VaccineId))
-                ))
-                .Where(g => g.Key > 0)
+            List<AgeData> top5AgeData = MapTo5AgeData(scheduleList);
+                
+            
+            _logger.LogInformation($"{nameof(DashboardService)} - Done getting dashboard summary");
+
+            return new DashboardSummaryRes
+            {
+                Year = year,
+                TotalAvailableVaccines = vaccineActiveList.Count,
+                TotalVaccinatedCustomers = scheduleList.DistinctBy(s => s.ChildId).Count(),
+                TotalAvailablePackages = packageAvailableList.Count,
+                AgeData = top5AgeData,
+                ManufacturerData = top5Manufacture,
+                VaccineData = top5Vaccine
+            };
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"{nameof(DashboardService)} - Error at get dashboard summary async cause by: {e.Message}");
+            throw;
+        }
+    }
+    
+    
+    private List<VaccineData> MapToTop5VaccineData(IList<Schedule> schedules)
+    {
+        try
+        {
+            _logger.LogInformation("Star mapping top 5 vaccinated data");
+            return schedules
+                .GroupBy(s => s.Vaccine.VaccineId)
                 .Select(g => new VaccineData
                 {
-                    NumberVaccinated = g.Key,
-                    ListVaccine = g.DistinctBy(v => v.VaccineId).ToList()
+                    NumberVaccinated = g.Count(),
+                    ListVaccine = new List<VaccineData.VaccineDetails>
+                    {
+                        new VaccineData.VaccineDetails
+                        {
+                            VaccineId = g.Key.ToString(),
+                            VaccineName = g.First().Vaccine.VaccineName
+                        }
+                    }
                 })
-                .OrderByDescending(vd => vd.NumberVaccinated)
-                .ThenBy(vd => vd.ListVaccine.FirstOrDefault()?.VaccineName)
+                .OrderByDescending(v => v.NumberVaccinated)
+                .Take(5)
                 .ToList();
-        
-
-            List<ManufacturerData> manufacturerData = manufacturerList
-                .Select(m => new ManufacturerData
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Error at mapping top 5 vaccine data {}",e.Message);
+            throw new Exception("Error at mapping top 5 vaccine data");
+        }
+    }
+    
+    private List<ManufacturerData> MapToTop5ManufacturerData(IList<Manufacturer> manufacturerList)
+    {
+        try
+        {
+            _logger.LogInformation("Star mapping top 5 manufacturers");
+            return manufacturerList.Select(m => new ManufacturerData
                 {
                     ManufacturerId = m.ManufacturerId.ToString(),
                     ManufacturerName = m.Name,
@@ -190,10 +225,23 @@ public class DashboardService : IDashboardService
                         .SelectMany(vm => vm.Batches)
                         .Sum(b => b.Quantity ?? 0)
                 })
-                .OrderByDescending(m => m.NumberBatch).Take(5).ToList();
+                .OrderByDescending(m => m.NumberBatch)
+                .Take(5).ToList();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Error at mapping top 5 manufacturer data cause by {}", e.Message);
+            throw new Exception("Error at mapping top 5 manufacturer data "+ e.Message);
+        }
+    }
 
-            List<AgeData> ageData = vaccinatedCustomerList
-                .DistinctBy(s => s.ChildId)
+
+    private List<AgeData> MapTo5AgeData(IList<Schedule> schedules)
+    {
+        try
+        {
+            _logger.LogInformation("Star mapping top 5 age data");
+            return schedules.DistinctBy(s => s.ChildId)
                 .Select(s => new
                 {
                     Age = DateTime.Now.Year - s.Child.Dob.Value.Year - 
@@ -206,29 +254,16 @@ public class DashboardService : IDashboardService
                     NumberVaccinated = g.Count()
                 })
                 .OrderByDescending(a => a.Age).Take(5).ToList();
-            
-            _logger.LogInformation($"{nameof(DashboardService)} - Done getting dashboard summary");
-
-            return new DashboardSummaryRes
-            {
-                Year = year,
-                TotalAvailableVaccines = vaccineActiveList.Count,
-                TotalVaccinatedCustomers = vaccinatedCustomerList.Count,
-                TotalAvailablePackages = packageAvailableList.Count,
-                AgeData = ageData,
-                ManufacturerData = manufacturerData,
-                VaccineData = vaccineData.Count > 5 ? vaccineData.Take(5).ToList() : vaccineData
-            };
         }
         catch (Exception e)
         {
-            _logger.LogError($"{nameof(DashboardService)} - Error at get dashboard summary async cause by: {e.Message}");
-            throw;
+            _logger.LogError("Error at mapping 5 age data cause by {}", e.Message);
+            throw new Exception("Error at mapping 5 age data");
         }
     }
-
+    
     private void UpdateAccountCount(AccountRes accountRes, Staff staff, StaticEnum.AccountEnum workingEnum,
-        StaticEnum.AccountEnum resignedEnum, ref int totalAccount)
+        StaticEnum.AccountEnum resignedEnum)
     {
         var isActive = string.Equals(StaticEnum.StatusEnum.Active.Name(), staff.Status,
             StringComparison.OrdinalIgnoreCase);
@@ -237,6 +272,5 @@ public class DashboardService : IDashboardService
         accountRes.AccountDictionary[key] = accountRes.AccountDictionary.TryGetValue(key, out int currentValue)
             ? currentValue + 1
             : 1;
-        totalAccount += 1;
     }
 }
