@@ -340,7 +340,17 @@ public class OrderService : IOrderService
     {
         try
         {
-            _logger.LogInformation("Start sending email to customer {}", payment.User.FullName);
+            var notificationRepository = _unitOfWork.GetRepository<Notification>();
+            Notification notification = new Notification()
+            {
+                UserId = payment.UserId,
+                TemplateId = StaticEnum.EmailTemplateEnum.AppointmentConfirmation.Id(),
+                ChildId = payment.Order.ChildId,
+                IsRead = false,
+                CreatedAt = DateTime.Now,
+                CreatedBy = "System"
+            };
+            _logger.LogInformation("Start sending email to customer {}", payment.User.Email);
             var param = new Dictionary<string, string>()
             {
                 { "Customer Name", payment.User.UserName  },
@@ -353,6 +363,10 @@ public class OrderService : IOrderService
             };
             await _emailService.SendEmailAsync(payment.User.Email, payment.User.FullName,
                 StaticEnum.EmailTemplateEnum.AppointmentConfirmation.Id(), param);
+
+            await notificationRepository.InsertAsync(notification);
+            await _unitOfWork.SaveChangeAsync();
+            _logger.LogInformation("Successfully send email to {}", payment.User.Email);
         }
         catch (Exception e)
         {
